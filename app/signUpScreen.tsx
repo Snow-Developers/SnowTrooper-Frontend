@@ -1,11 +1,42 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { TextInput, View } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { Text, TextInput, View } from 'react-native';
+import { Button } from 'react-native-paper';
 
 export default function SignUpScreen() {
+
+
     const handleEmailSignUp = () => {
       router.push('/SignUpViews/emailPage');
+    }
+
+    const handleGoogleSignUp = () => {
+        //Currently only work on web app
+
+        // const auth = getAuth();
+        // const provider = new GoogleAuthProvider();
+        // signInWithPopup(auth, provider)
+        //     .then((result) => {
+        //         const credential = GoogleAuthProvider.credentialFromResult(result);
+        //         const token = credential?.accessToken;
+        //         // The signed-in user info.
+        //         const user = result.user;
+        //         console.log('User signed up successfully with Google:', user);
+        //         console.log('Google Sign Up Details:', {
+        //             uid: user.uid,
+        //             email: user.email,
+        //         });
+                    
+
+        //     }).catch((error) => {
+        //         // Handle Errors here.
+        //         const errorCode = error.code;
+        //         const errorMessage = error.message;
+        //         // The email of the user's account used.
+        //         const email = error.customData.email;
+        //         // The AuthCredential type that was used.
+        //         const credential = GoogleAuthProvider.credentialFromError(error);
+        // });
     }
 
   return (
@@ -20,7 +51,7 @@ export default function SignUpScreen() {
         Sign up with Apple
       </Button>
 
-      <Button icon="google" mode="outlined" onPress={() => console.log('Google')}>
+      <Button icon="google" mode="outlined" onPress={handleGoogleSignUp}>
         Sign up with Google
       </Button>
 

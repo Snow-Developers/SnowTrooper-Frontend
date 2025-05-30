@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>287786333926-co8a648i3vk4go3gp63d8i5tkoj02dki.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.287786333926-co8a648i3vk4go3gp63d8i5tkoj02dki</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCmSUdVtqd64tQM7xaxIycXqD2LpRBea5k</string>
+	<key>GCM_SENDER_ID</key>
+	<string>287786333926</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.company.snowtrooper</string>
+	<key>PROJECT_ID</key>
+	<string>snowtroopers-b8573</string>
+	<key>STORAGE_BUCKET</key>
+	<string>snowtroopers-b8573.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:287786333926:ios:6b04174b648f1437376d27</string>
+</dict>
+</plist>

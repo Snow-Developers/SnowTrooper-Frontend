@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "287786333926",
+    "project_id": "snowtroopers-b8573",
+    "storage_bucket": "snowtroopers-b8573.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287786333926:android:679a71d7b6ab9649376d27",
+        "android_client_info": {
+          "package_name": "com.company.snowtrooper"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCudRMRJJvUiNnPzmywI_ofUl-o0TntaZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

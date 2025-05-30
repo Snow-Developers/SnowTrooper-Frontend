@@ -30,6 +30,7 @@ export default function App() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
           <Stack.Screen name = "Login" component={LogInScreen} />
+          {/* <Stack.Screen name = "emailPage" component={EmailPage} /> */}
         </Stack.Navigator>
     </PaperProvider>
   );
