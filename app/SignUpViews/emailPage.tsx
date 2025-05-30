@@ -89,6 +89,7 @@ export default function EmailPage() {
                 placeholder="Enter a password"
                 value={password}
                 onChangeText={text => setPassword(text)}
+                secureTextEntry
             />
 
             <Text variant="labelLarge">Confirm Password</Text>
@@ -97,6 +98,7 @@ export default function EmailPage() {
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChangeText={text => setConfirmPassword(text)}
+                secureTextEntry
             />
 
             <Button

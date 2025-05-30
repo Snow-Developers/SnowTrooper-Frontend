@@ -14,6 +14,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app)
 
+// let appCheck;
 
-export default auth ;
+// if (Platform.OS === 'web') {
+//   appCheck = initializeAppCheck(app, {
+//     provider: new ReCaptchaV3Provider(process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY || ''),
+//     isTokenAutoRefreshEnabled: true
+//   });
+// }
+
+
+export default auth;
+// export { appCheck };
 
