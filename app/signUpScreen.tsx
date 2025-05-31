@@ -144,7 +144,7 @@ export default function SignUpScreen() {
 
       <Button
         icon="facebook"
-        mode="outlined"
+        mode="contained"
         onPress={() => console.log("Facebook")}
         style={styles.socialButton}
       >
@@ -153,7 +153,7 @@ export default function SignUpScreen() {
 
       <Button
         icon="google"
-        mode="outlined"
+        mode="contained"
         onPress={handleGoogleSignUp}
         style={styles.socialButton}
       >
@@ -162,7 +162,7 @@ export default function SignUpScreen() {
 
       <Button
         icon="email"
-        mode="outlined"
+        mode="contained"
         onPress={handleEmailSignUp}
         style={styles.socialButton}
       >

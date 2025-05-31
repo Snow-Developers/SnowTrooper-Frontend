@@ -11,16 +11,6 @@ import LogInScreen from "./logInScreen";
 import SignUpScreen from "./signUpScreen";
 
 const Stack = createNativeStackNavigator();
-
-const customTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: "#00bedc",
-    accent: "#00bedc",
-  },
-};
-
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
@@ -49,6 +39,25 @@ function HomeScreen({ navigation }: { navigation: any }) {
   );
 }
 
+export default function App() {
+  return (
+    <PaperProvider theme={customTheme}>
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#fff" },
+        }}
+      >
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="Login" component={LogInScreen} />
+        {/* <Stack.Screen name = "emailPage" component={EmailPage} /> */}
+      </Stack.Navigator>
+    </PaperProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
@@ -69,21 +78,11 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function App() {
-  return (
-    <PaperProvider theme={customTheme}>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#fff" },
-        }}
-      >
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="Login" component={LogInScreen} />
-        {/* <Stack.Screen name = "emailPage" component={EmailPage} /> */}
-      </Stack.Navigator>
-    </PaperProvider>
-  );
-}
+const customTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: "#00bedc",
+    accent: "#00bedc",
+  },
+};
