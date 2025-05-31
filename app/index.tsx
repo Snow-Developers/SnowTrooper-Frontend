@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 60,
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#ffffff",
   },
   logo: {
     width: width * 0.5,
@@ -74,7 +74,10 @@ export default function App() {
     <PaperProvider theme={customTheme}>
       <Stack.Navigator
         initialRouteName="Home"
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#fff" },
+        }}
       >
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
