@@ -1,5 +1,5 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import {
@@ -7,53 +7,33 @@ import {
   DefaultTheme,
   Provider as PaperProvider,
 } from "react-native-paper";
-import LogInScreen from "./logInScreen";
-import SignUpScreen from "./signUpScreen";
 
-const Stack = createNativeStackNavigator();
 const { width } = Dimensions.get("window");
 
-function HomeScreen({ navigation }: { navigation: any }) {
-  return (
-    <View style={styles.container}>
-      <Image
-        source={require("../assets/images/SnowTroopers_Logo.png")}
-        style={styles.logo}
-        contentFit="contain"
-      />
-      <Button
-        mode="contained"
-        style={styles.button}
-        onPress={() => navigation.navigate("SignUp")}
-      >
-        Sign Up
-      </Button>
-      <Button
-        mode="contained"
-        style={styles.button}
-        onPress={() => navigation.navigate("Login")}
-      >
-        Log In
-      </Button>
-    </View>
-  );
-}
-
-export default function App() {
+export default function HomeScreen() {
   return (
     <PaperProvider theme={customTheme}>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#fff" },
-        }}
-      >
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="Login" component={LogInScreen} />
-        {/* <Stack.Screen name = "emailPage" component={EmailPage} /> */}
-      </Stack.Navigator>
+      <View style={styles.container}>
+        <Image
+          source={require("../assets/images/SnowTroopers_Logo.png")}
+          style={styles.logo}
+          contentFit="contain"
+        />
+        <Button
+          mode="contained"
+          style={styles.button}
+          onPress={() => router.push("/signUpScreen")}
+        >
+          Sign Up
+        </Button>
+        <Button
+          mode="contained"
+          style={styles.button}
+          onPress={() => router.push("/logInScreen")}
+        >
+          Log In
+        </Button>
+      </View>
     </PaperProvider>
   );
 }
@@ -84,5 +64,6 @@ const customTheme = {
     ...DefaultTheme.colors,
     primary: "#00bedc",
     accent: "#00bedc",
+    background: "#ffffff",
   },
 };
