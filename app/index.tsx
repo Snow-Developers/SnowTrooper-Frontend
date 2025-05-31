@@ -2,39 +2,33 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import {
-  Button,
-  DefaultTheme,
-  Provider as PaperProvider,
-} from "react-native-paper";
+import { Button } from "react-native-paper";
 
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   return (
-    <PaperProvider theme={customTheme}>
-      <View style={styles.container}>
-        <Image
-          source={require("../assets/images/SnowTroopers_Logo.png")}
-          style={styles.logo}
-          contentFit="contain"
-        />
-        <Button
-          mode="contained"
-          style={styles.button}
-          onPress={() => router.push("/signUpScreen")}
-        >
-          Sign Up
-        </Button>
-        <Button
-          mode="contained"
-          style={styles.button}
-          onPress={() => router.push("/logInScreen")}
-        >
-          Log In
-        </Button>
-      </View>
-    </PaperProvider>
+    <View style={styles.container}>
+      <Image
+        source={require("../assets/images/SnowTroopers_Logo.png")}
+        style={styles.logo}
+        contentFit="contain"
+      />
+      <Button
+        mode="contained"
+        style={styles.button}
+        onPress={() => router.push("/signUpScreen")}
+      >
+        Sign Up
+      </Button>
+      <Button
+        mode="contained"
+        style={styles.button}
+        onPress={() => router.push("/logInScreen")}
+      >
+        Log In
+      </Button>
+    </View>
   );
 }
 
@@ -57,13 +51,3 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 });
-
-const customTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: "#00bedc",
-    accent: "#00bedc",
-    background: "#ffffff",
-  },
-};
