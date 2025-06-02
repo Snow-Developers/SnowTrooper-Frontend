@@ -5,8 +5,8 @@ const customTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: "#00bedc",
-    accent: "#00bedc",
+    primary: "#00c1de",
+    accent: "#00c1de",
     background: "#ffffff",
   },
 };

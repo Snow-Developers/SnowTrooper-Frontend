@@ -10,7 +10,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../assets/images/SnowTroopers_Logo.png")}
+        source={require("../assets/images/ST_Logo.png")}
         style={styles.logo}
         contentFit="contain"
       />
