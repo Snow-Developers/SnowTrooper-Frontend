@@ -196,11 +196,6 @@ export default function SignUpScreen() {
       >
         Sign Up
       </Button>
-
-      <View style={styles.footer}>
-        <Text>Forgot password</Text>
-        <Text>Help Center</Text>
-      </View>
     </ScrollView>
   );
 }
