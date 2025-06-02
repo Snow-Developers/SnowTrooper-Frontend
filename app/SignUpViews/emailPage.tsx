@@ -1,6 +1,6 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import auth from "../../services/firebaseConfig";
 
@@ -40,78 +40,96 @@ export default function EmailPage() {
   };
 
   return (
-    <View>
-      <Text variant="headlineMedium">Enter Information</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text variant="headlineMedium" style={styles.title}>
+        Enter Information
+      </Text>
 
       <Text variant="labelLarge">First Name</Text>
       <TextInput
         label="First Name"
         value={firstName}
         onChangeText={(text) => setFirstName(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
+        mode="outlined"
+        style={styles.input}
       />
 
       <Text variant="labelLarge">Last Name</Text>
       <TextInput
         label="Last Name"
-        placeholder="Enter your last name"
         value={lastName}
         onChangeText={(text) => setLastName(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
+        mode="outlined"
+        style={styles.input}
       />
 
       <Text variant="labelLarge">Email</Text>
       <TextInput
         label="Email"
-        placeholder="Enter your email"
         value={email}
         onChangeText={(text) => setEmail(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
+        mode="outlined"
+        style={styles.input}
       />
 
       <Text variant="labelLarge">Phone Number</Text>
       <TextInput
         label="Phone Number"
-        placeholder="Enter your phone number"
         value={phoneNumber}
         onChangeText={(text) => setPhoneNumber(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
+        mode="outlined"
+        style={styles.input}
       />
 
       <Text variant="labelLarge">Password</Text>
       <TextInput
         label="Password"
-        placeholder="Enter a password"
         value={password}
         onChangeText={(text) => setPassword(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
         secureTextEntry
+        mode="outlined"
+        style={styles.input}
       />
 
       <Text variant="labelLarge">Confirm Password</Text>
       <TextInput
         label="Confirm Password"
-        placeholder="Re-enter your password"
         value={confirmPassword}
         onChangeText={(text) => setConfirmPassword(text)}
-        style={{ backgroundColor: "white" }}
-        mode="outlined" 
         secureTextEntry
+        mode="outlined"
+        style={styles.input}
       />
 
       <Button
         mode="contained"
         onPress={handleEmailSignUp}
-        style={{ marginTop: 20 }}
+        style={styles.button}
       >
-        {" "}
-        Sign Up{" "}
+        Sign Up
       </Button>
-    </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: 40,
+    paddingHorizontal: 24,
+    alignItems: "stretch",
+  },
+  title: {
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  input: {
+    width: "100%",
+    marginBottom: 12,
+    backgroundColor: "white",
+  },
+  button: {
+    width: "100%",
+    marginTop: 20,
+    borderRadius: 30,
+  },
+});
