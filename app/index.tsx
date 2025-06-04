@@ -1,12 +1,13 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View, } from "react-native";
 import { Button } from "react-native-paper";
 
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
+
   return (
     <View style={styles.container}>
       <Image

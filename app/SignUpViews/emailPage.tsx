@@ -2,7 +2,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
-import api from "../../services/api";
+import api, { getAPIToken } from "../../services/api";
 import auth from "../../services/firebaseConfig";
 
 
@@ -36,7 +36,13 @@ export default function EmailPage() {
                     email: email,
                     phoneNumber: phoneNumber,
                     role: userRole,
-                }).catch((error) => {
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${getAPIToken()}`
+                    }
+                }
+            ).catch((error) => {
                     console.log("An error has occurred: ", error);
                 });
                 alert('Sign Up Successful');
