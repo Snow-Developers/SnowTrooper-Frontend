@@ -8,7 +8,7 @@ import {
   signInWithPhoneNumber,
   signInWithPopup,
 } from "firebase/auth";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -19,11 +19,6 @@ import {
 } from "react-native";
 import { Button } from "react-native-paper";
 
-GoogleSignin.configure({
-  webClientId:
-    "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
-});
-
 declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier;
@@ -33,6 +28,16 @@ declare global {
 export default function LoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [callCode, setCallCode] = useState("");
+
+  // Configure Google Sign-in only on native platforms
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      GoogleSignin.configure({
+        webClientId:
+          "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
+      });
+    }
+  }, []);
 
   const handleEmailLogin = () => {
     router.push("/LogInViews/emailPage");
@@ -52,16 +57,21 @@ export default function LoginScreen() {
           console.error("Google login error:", error);
         });
     } else {
-      await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-      const signInResult = await GoogleSignin.signIn();
+      try {
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+        const signInResult = await GoogleSignin.signIn();
 
-      const idToken = signInResult.data?.idToken;
-      if (!idToken) throw new Error("No ID token found");
+        const idToken = signInResult.data?.idToken;
+        if (!idToken) throw new Error("No ID token found");
 
-      const credential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(auth, credential);
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(auth, credential);
+      } catch (error) {
+        console.error("Google login error:", error);
+        alert(`Error during Google login: ${error}`);
+      }
     }
   };
 

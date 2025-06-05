@@ -8,7 +8,7 @@ import {
   signInWithPhoneNumber,
   signInWithPopup,
 } from "firebase/auth";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -18,11 +18,6 @@ import {
   View,
 } from "react-native";
 import { Button } from "react-native-paper";
-
-GoogleSignin.configure({
-  webClientId:
-    "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
-});
 
 declare global {
   interface Window {
@@ -34,6 +29,16 @@ export default function SignUpScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [callCode, setCallCode] = useState("");
+
+  // Configure Google Sign-in only on native platforms
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      GoogleSignin.configure({
+        webClientId:
+          "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
+      });
+    }
+  }, []);
 
   const handleEmailSignUp = () => {
     router.push("/SignUpViews/emailPage");
@@ -68,29 +73,35 @@ export default function SignUpScreen() {
           const credential = GoogleAuthProvider.credentialFromError(error);
         });
     } else {
-      console.log("Mobile Google Signin");
-      // Check if your device supports Google Play
-      await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-      // Get the users ID token
-      const signInResult = await GoogleSignin.signIn();
+      try {
+        console.log("Mobile Google Signin");
+        // Check if your device supports Google Play
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
+        // Get the users ID token
+        const signInResult = await GoogleSignin.signIn();
 
-      let idToken = signInResult.data?.idToken;
+        let idToken = signInResult.data?.idToken;
 
-      if (!idToken) {
-        throw new Error("No ID token found");
+        if (!idToken) {
+          throw new Error("No ID token found");
+        }
+
+        if (!signInResult.data)
+          throw new Error("Missing data for signInResult");
+        // Create a Google credential with the token
+        const googleCredential = GoogleAuthProvider.credential(
+          signInResult.data.idToken
+        );
+        console.log(googleCredential);
+
+        // Sign-in the user with the credential
+        return signInWithCredential(getAuth(), googleCredential);
+      } catch (error) {
+        console.error("Google Sign-in error:", error);
+        alert(`Error during Google sign-in: ${error}`);
       }
-
-      if (!signInResult.data) throw new Error("Missing data for signInResult");
-      // Create a Google credential with the token
-      const googleCredential = GoogleAuthProvider.credential(
-        signInResult.data.idToken
-      );
-      console.log(googleCredential);
-
-      // Sign-in the user with the credential
-      return signInWithCredential(getAuth(), googleCredential);
     }
   };
 
