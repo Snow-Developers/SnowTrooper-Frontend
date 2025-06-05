@@ -36,6 +36,7 @@ export default function LoginScreen() {
 
   const handleEmailLogin = () => {
     router.push("/LogInViews/emailPage");
+
   };
 
   const handleGoogleLogin = async () => {
@@ -73,14 +74,14 @@ export default function LoginScreen() {
     try {
       const auth = getAuth();
 
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneLogin", {
-          size: "invisible",
-          callback: (response: any) => {
-            console.log("reCAPTCHA solved");
-          },
-        });
-      }
+       if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneLogin", {
+        size: "invisible",
+        callback: (response: any) => {
+          console.log("reCAPTCHA solved");
+        },
+      });
+    }
 
       const e164Format = `+${callCode}${phoneNumber}`;
       const confirmationResult = await signInWithPhoneNumber(
@@ -164,8 +165,9 @@ export default function LoginScreen() {
       </Button>
 
       <View style={styles.footer}>
-        <Text>Forgot password</Text>
-        <Text>Help Center</Text>
+        <Text onPress={() => router.push("/LogInViews/forgotPasswordPage")}>
+          Forgot password
+        </Text>
       </View>
     </ScrollView>
   );
