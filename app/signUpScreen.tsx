@@ -1,6 +1,7 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { router } from "expo-router";
 import {
+  FacebookAuthProvider,
   getAuth,
   GoogleAuthProvider,
   RecaptchaVerifier,
@@ -149,6 +150,56 @@ export default function SignUpScreen() {
     }
   };
 
+  const handleFacebookSignUp = async () => {
+    if (Platform.OS === "web") {
+      const auth = getAuth();
+      const provider = new FacebookAuthProvider();
+
+      provider.addScope("email");
+      provider.addScope("public_profile");
+
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const credential = FacebookAuthProvider.credentialFromResult(result);
+        const accessToken = credential?.accessToken;
+
+        // The signed-in user info
+        const user = result.user;
+        console.log("User signed up successfully with Facebook:", user);
+
+        // Facebook login info to use for later
+        console.log("Facebook Sign Up Details:", {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoUrl: user.photoURL,
+        });
+
+        // Navigate to next screen or update UI
+        // router.push("/dashboard"); 
+      } catch (error: any) {
+        console.error("Facebook Sign-in error:", error);
+
+        const errorCode = error.code;
+        const errorMessage = error.message;
+
+        if (errorCode === "auth/account-exists-with-different-credential") {
+          alert(
+            "An account with this email already exists with a different sign-in method."
+          );
+        } else if (errorCode === "auth/popup-closed-by-user") {
+          alert("Sign-in was cancelled.");
+        } else {
+          alert(`Error during Facebook sign-in: ${errorMessage}`);
+        }
+      }
+    } else {
+      alert(
+        "Facebook sign-in on mobile requires additional setup with Facebook SDK"
+      );
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Sign up</Text>
@@ -156,7 +207,7 @@ export default function SignUpScreen() {
       <Button
         icon="facebook"
         mode="contained"
-        onPress={() => console.log("Facebook")}
+        onPress={handleFacebookSignUp}
         style={styles.socialButton}
       >
         Sign up with Facebook
@@ -207,6 +258,7 @@ export default function SignUpScreen() {
       >
         Sign Up
       </Button>
+
     </ScrollView>
   );
 }
