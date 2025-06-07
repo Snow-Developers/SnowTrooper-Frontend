@@ -31,13 +31,30 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [callCode, setCallCode] = useState("");
 
-  // Configure Google Sign-in only on native platforms
+  // Configure Google Sign-in and check Facebook SDK
   useEffect(() => {
     if (Platform.OS !== "web") {
+      // Google Sign-in
       GoogleSignin.configure({
         webClientId:
           "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
       });
+
+      // Debug Facebook SDK
+      try {
+        const {
+          LoginManager,
+          AccessToken,
+        } = require("react-native-fbsdk-next");
+        console.log(
+          "Facebook SDK loaded successfully:",
+          !!LoginManager && !!AccessToken
+        );
+        console.log("LoginManager available:", !!LoginManager);
+        console.log("AccessToken available:", !!AccessToken);
+      } catch (error) {
+        console.log("Facebook SDK load error:", error);
+      }
     }
   }, []);
 
@@ -155,6 +172,7 @@ export default function SignUpScreen() {
       const auth = getAuth();
       const provider = new FacebookAuthProvider();
 
+      // Add additional permissions
       provider.addScope("email");
       provider.addScope("public_profile");
 
@@ -174,12 +192,10 @@ export default function SignUpScreen() {
           email: user.email,
           photoUrl: user.photoURL,
         });
-
-        // Navigate to next screen or update UI
-        // router.push("/dashboard"); 
       } catch (error: any) {
         console.error("Facebook Sign-in error:", error);
 
+        // Handle specific error cases
         const errorCode = error.code;
         const errorMessage = error.message;
 
@@ -194,9 +210,109 @@ export default function SignUpScreen() {
         }
       }
     } else {
-      alert(
-        "Facebook sign-in on mobile requires additional setup with Facebook SDK"
-      );
+      // Debug code for Android FB SDK
+      try {
+        console.log("Starting Facebook login on mobile...");
+
+        // Import Facebook SDK only when needed on mobile
+        const {
+          LoginManager,
+          AccessToken,
+        } = require("react-native-fbsdk-next");
+
+        // Check if I can access Facebook SDK
+        if (!LoginManager || !AccessToken) {
+          throw new Error("Facebook SDK not properly loaded");
+        }
+
+        console.log("Facebook SDK modules loaded successfully");
+
+        // Login with Facebook SDK
+        console.log("Attempting Facebook login...");
+        const result = await LoginManager.logInWithPermissions([
+          "public_profile",
+          "email",
+        ]);
+
+        console.log("Facebook login result:", result);
+
+        if (result.isCancelled) {
+          console.log("Facebook login was cancelled");
+          alert("Facebook login was cancelled");
+          return;
+        }
+
+        if (result.error) {
+          throw new Error(`Facebook login error: ${result.error}`);
+        }
+
+        console.log("Getting Facebook access token...");
+        // Get the access token
+        const data = await AccessToken.getCurrentAccessToken();
+
+        if (!data || !data.accessToken) {
+          throw new Error("No access token found after successful login");
+        }
+
+        console.log("Facebook access token obtained successfully");
+
+        // Create a Firebase credential with the token
+        console.log("Creating Firebase credential...");
+        const facebookCredential = FacebookAuthProvider.credential(
+          data.accessToken
+        );
+
+        // Sign-in the user with the credential
+        console.log("Signing in with Firebase...");
+        const auth = getAuth();
+
+        // Add timeout to Firebase auth call
+        const userCredential = await signInWithCredential(
+          auth,
+          facebookCredential
+        );
+        const user = userCredential.user;
+        console.log(
+          "User signed up successfully with Facebook (Mobile):",
+          user
+        );
+
+        // Facebook login info to use for later
+        console.log("Facebook Mobile Sign Up Details:", {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoUrl: user.photoURL,
+        });
+
+        alert("Successfully signed in with Facebook!");
+
+        // Navigate to next screen or update UI
+        // router.push("/dashboard");
+      } catch (error: any) {
+        console.error("Facebook Sign-in error (Mobile):", error);
+
+        // More detailed error handling
+        if (error.message?.includes("Cannot resolve module")) {
+          alert(
+            "Facebook SDK not properly configured for mobile. Please check your setup."
+          );
+        } else if (error.message?.includes("Network")) {
+          alert(
+            "Network error during Facebook sign-in. Please check your internet connection and try again."
+          );
+        } else if (error.message?.includes("timeout")) {
+          alert(
+            "Sign-in timed out. Please check your internet connection and try again."
+          );
+        } else if (error.message?.includes("SDK not properly loaded")) {
+          alert(
+            "Facebook SDK failed to load. Please restart the app and try again."
+          );
+        } else {
+          alert(`Error during Facebook sign-in: ${error.message || error}`);
+        }
+      }
     }
   };
 
@@ -258,7 +374,6 @@ export default function SignUpScreen() {
       >
         Sign Up
       </Button>
-
     </ScrollView>
   );
 }
