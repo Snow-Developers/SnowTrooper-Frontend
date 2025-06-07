@@ -1,4 +1,4 @@
-// import axios from "axios";
+import axios from "axios";
 
 const API_URL = "http://192.168.1.100:8080/api";
 let apiToken: any;
