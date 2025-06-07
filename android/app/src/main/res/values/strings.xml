@@ -3,4 +3,7 @@
   <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+  <string name="facebook_app_id">2115287812301619</string>
+  <string name="facebook_client_token">2060454ac8d42bf0531c6df0c7231c6b</string>
+  <string name="fb_login_protocol_scheme">fb2115287812301619</string>
 </resources>

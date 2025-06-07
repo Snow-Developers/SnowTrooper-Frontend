@@ -38,14 +38,29 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      ["expo-build-properties", {
-        "ios": {
-          "useFrameworks": "static"
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
-      }],
+      ],
       "@react-native-google-signin/google-signin",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth"
+      "@react-native-firebase/auth",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "2115287812301619",
+          "clientToken": "2060454ac8d42bf0531c6df0c7231c6b",
+          "displayName": "Snow Trooper",
+          "scheme": "fb2115287812301619",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

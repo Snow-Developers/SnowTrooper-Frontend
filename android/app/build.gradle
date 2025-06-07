@@ -148,6 +148,8 @@ android {
 }
 
 dependencies {
+    // Added by Margaret
+    implementation ("com.facebook.android:facebook-android-sdk:latest.release")
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
