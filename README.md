@@ -14,6 +14,11 @@ This is the repository for the frontend of the SnowTrooper mobile app. Below are
    ```bash
    npx expo start
    ```
+2.1 Start on Android phone
+   ```bash
+   npx expo run:android
+   ```
+
 
 In the output, you'll find options to open the app in a
 
