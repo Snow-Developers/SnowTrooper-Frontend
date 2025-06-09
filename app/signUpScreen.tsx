@@ -347,33 +347,7 @@ export default function SignUpScreen() {
         Sign up with Email
       </Button>
 
-      <Text style={styles.orText}>Or</Text>
-
-      <View style={styles.phoneRow}>
-        <TextInput
-          placeholder="+1"
-          value={callCode}
-          onChangeText={setCallCode}
-          style={styles.inputCode}
-        />
-        <TextInput
-          placeholder="Mobile number"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          style={styles.inputPhone}
-        />
-      </View>
-
       {Platform.OS === "web" && <div id="phoneSignUp"></div>}
-
-      <Button
-        icon="arrow-right"
-        mode="contained"
-        onPress={handlePhoneNumberSignUp}
-        style={styles.submitButton}
-      >
-        Sign Up
-      </Button>
     </ScrollView>
   );
 }
