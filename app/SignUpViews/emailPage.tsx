@@ -44,7 +44,7 @@ export default function EmailPage() {
               },
             }
           )
-          .catch((error) => {
+          .catch((error: any) => {
             console.log("An error has occurred: ", error);
           });
         alert("Sign Up Successful");
