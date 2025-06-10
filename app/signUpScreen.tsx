@@ -2,23 +2,22 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { router } from "expo-router";
 import {
   FacebookAuthProvider,
+  getAdditionalUserInfo,
   getAuth,
   GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithCredential,
-  signInWithPhoneNumber,
-  signInWithPopup,
+  signInWithPopup
 } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  View,
+  Text
 } from "react-native";
 import { Button } from "react-native-paper";
+import { useSignUpContext } from '../context/SignUpContext';
 
 declare global {
   interface Window {
@@ -27,36 +26,45 @@ declare global {
 }
 
 export default function SignUpScreen() {
+  const { setSignUpData } = useSignUpContext();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [userRole, setUserRole] = useState('Customer');
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [callCode, setCallCode] = useState("");
 
-  // Configure Google Sign-in and check Facebook SDK
   useEffect(() => {
-    if (Platform.OS !== "web") {
-      // Google Sign-in
-      GoogleSignin.configure({
-        webClientId:
-          "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
-      });
+      if (Platform.OS !== "web") {
+        // Google Sign-in
+        GoogleSignin.configure({
+          webClientId:
+            "287786333926-ldodf9sgglpl496des2iftafgc4bivo8.apps.googleusercontent.com",
+        });
 
-      // Debug Facebook SDK
-      try {
-        const {
-          LoginManager,
-          AccessToken,
-        } = require("react-native-fbsdk-next");
-        console.log(
-          "Facebook SDK loaded successfully:",
-          !!LoginManager && !!AccessToken
-        );
-        console.log("LoginManager available:", !!LoginManager);
-        console.log("AccessToken available:", !!AccessToken);
-      } catch (error) {
-        console.log("Facebook SDK load error:", error);
+        // Debug Facebook SDK
+        try {
+          const {
+            LoginManager,
+            AccessToken,
+            GraphRequest,
+            GraphRequestManager
+          } = require("react-native-fbsdk-next");
+          console.log(
+            "Facebook SDK loaded successfully:",
+            !!LoginManager && !!AccessToken && !!GraphRequest && !!GraphRequestManager
+          );
+          console.log("LoginManager available:", !!LoginManager);
+          console.log("AccessToken available:", !!AccessToken);
+          console.log("GraphRequest available:", !!GraphRequest);
+          console.log("GraphRequestManager available:", !!GraphRequestManager);
+        } catch (error) {
+          console.log("Facebook SDK load error:", error);
+        }
       }
-    }
-  }, []);
+    }, []);
+  
 
   const handleEmailSignUp = () => {
     router.push("/SignUpViews/emailPage");
@@ -67,7 +75,7 @@ export default function SignUpScreen() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider)
-        .then((result) => {
+        .then((result : any) => {
           const credential = GoogleAuthProvider.credentialFromResult(result);
           const token = credential?.accessToken;
           // The signed-in user info.
@@ -77,11 +85,27 @@ export default function SignUpScreen() {
           console.log("Google Sign Up Details:", {
             uid: user.uid,
             displayName: user.displayName,
+            lastName: user.familyName,
             email: user.email,
             photoUrl: user.photoURL,
           });
-        })
-        .catch((error) => {
+
+          const additionalInfo = getAdditionalUserInfo(result);
+          const profile = additionalInfo?.profile as any;
+          const firstName = profile?.given_name;
+          const lastName = profile?.family_name;
+          const email = profile?.email;
+
+          setSignUpData({
+                    firstName,
+                    lastName,
+                    email,
+                    phoneNumber,
+                    userRole,
+                });
+
+          router.push("/SignUpViews/additionalInfo");
+        }).catch((error : any) => {
           // Handle Errors here.
           const errorCode = error.code;
           const errorMessage = error.message;
@@ -123,49 +147,49 @@ export default function SignUpScreen() {
     }
   };
 
-  const handlePhoneNumberSignUp = async () => {
-    if (Platform.OS !== "web") {
-      return alert("Can't use phone number sign up on mobile.");
-    }
+  // const handlePhoneNumberSignUp = async () => {
+  //   if (Platform.OS !== "web") {
+  //     return alert("Can't use phone number sign up on mobile.");
+  //   }
 
-    try {
-      const auth = getAuth();
+  //   try {
+  //     const auth = getAuth();
 
-      // Create the RecaptchaVerifier instance
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneSignUp", {
-        size: "invisible",
-        callback: (response: any) => {
-          console.log("reCAPTCHA solved");
-        },
-      });
+  //     // Create the RecaptchaVerifier instance
+  //     window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneSignUp", {
+  //       size: "invisible",
+  //       callback: (response: any) => {
+  //         console.log("reCAPTCHA solved");
+  //       },
+  //     });
 
-      // Start the phone number verification process
-      const e164Format = `+${callCode}${phoneNumber}`;
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        e164Format,
-        window.recaptchaVerifier
-      );
+  //     // Start the phone number verification process
+  //     const e164Format = `+${callCode}${phoneNumber}`;
+  //     const confirmationResult = await signInWithPhoneNumber(
+  //       auth,
+  //       e164Format,
+  //       window.recaptchaVerifier
+  //     );
 
-      // Prompt for verification code
-      const code = window.prompt("Enter the verification code");
-      if (!code) {
-        alert("Missing confirmation code, please try again...");
-        return;
-      }
+  //     // Prompt for verification code
+  //     const code = window.prompt("Enter the verification code");
+  //     if (!code) {
+  //       alert("Missing confirmation code, please try again...");
+  //       return;
+  //     }
 
-      // Verify the code
-      await confirmationResult.confirm(code);
-      console.log("Phone number verified successfully");
-    } catch (error) {
-      console.error("Phone verification error:", error);
-      alert(`Error during phone verification: ${error}`);
-      // Reset the reCAPTCHA if there's an error
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-      }
-    }
-  };
+  //     // Verify the code
+  //     await confirmationResult.confirm(code);
+  //     console.log("Phone number verified successfully");
+  //   } catch (error) {
+  //     console.error("Phone verification error:", error);
+  //     alert(`Error during phone verification: ${error}`);
+  //     // Reset the reCAPTCHA if there's an error
+  //     if (window.recaptchaVerifier) {
+  //       window.recaptchaVerifier.clear();
+  //     }
+  //   }
+  // };
 
   const handleFacebookSignUp = async () => {
     if (Platform.OS === "web") {
@@ -218,10 +242,12 @@ export default function SignUpScreen() {
         const {
           LoginManager,
           AccessToken,
+          GraphRequest,
+          GraphRequestManager,
         } = require("react-native-fbsdk-next");
 
         // Check if I can access Facebook SDK
-        if (!LoginManager || !AccessToken) {
+        if (!LoginManager || !AccessToken || !GraphRequest || !GraphRequestManager) {
           throw new Error("Facebook SDK not properly loaded");
         }
 
@@ -256,6 +282,44 @@ export default function SignUpScreen() {
 
         console.log("Facebook access token obtained successfully");
 
+        //New code for grabing fb profile data
+        console.log("Fetching Facebook user profile data...");
+        const profileRequest = new GraphRequest(
+          "/me",
+          {
+            parameters: {
+              fields: {
+                request: "id,name,email,first_name,last_name,picture.type(large)", // Request specific fields
+              },
+            },
+          },
+          (error : any, result : any) => {
+            if (error) {
+              console.error("Error fetching Facebook profile:", error);
+              // Handle the error appropriately, e.g., show an alert
+            } else {
+              console.log("Facebook profile data:", result);
+              
+              const fbFirstName = result.first_name;
+              const fbLastName = result.last_name;
+              const fbEmail = result.email;
+
+              setSignUpData({
+                firstName: fbFirstName || firstName, // Use FB name if available, otherwise your existing firstName
+                lastName: fbLastName || lastName, // Use FB name if available, otherwise your existing lastName
+                email: fbEmail || email, // Use FB email if available, otherwise your existing email
+                phoneNumber,
+                userRole,
+              });
+            }
+          }
+        );
+
+        // Start the graph request
+        new GraphRequestManager().addRequest(profileRequest).start();
+        //End
+
+
         // Create a Firebase credential with the token
         console.log("Creating Firebase credential...");
         const facebookCredential = FacebookAuthProvider.credential(
@@ -284,6 +348,14 @@ export default function SignUpScreen() {
           email: user.email,
           photoUrl: user.photoURL,
         });
+
+        setSignUpData({
+                    firstName ,
+                    lastName,
+                    email,
+                    phoneNumber,
+                    userRole,
+                });
 
         alert("Successfully signed in with Facebook!");
 

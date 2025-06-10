@@ -10,9 +10,6 @@ export function getAPIToken() {
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 //Login credentials
@@ -21,18 +18,13 @@ const credentials = {
   password: "password",
 };
 
-//Initial connection with API
-api
-  .post(`/login`, credentials, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-  })
-  .then((response) => {
+api.post(`/login`, credentials, {
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded",
+  },
+}).then((response) => {
     apiToken = response.data;
-  })
-  .catch((error) => {
-    console.error("API login error:", error.response?.data || error.message);
-  });
+    console.log("Logged into API");
+}).catch((error) => { console.log("An error has occurred: ", error)});
 
-// export default api;
+export default api;

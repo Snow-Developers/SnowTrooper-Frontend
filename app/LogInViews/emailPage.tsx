@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -17,6 +18,8 @@ export default function EmailLoginPage() {
                 email: user.email,
             });
             alert('Login Successful');
+            router.replace("/homeScreen");
+
         } catch (error: any) {
             console.error('Login failed:', error);
             alert('Login Failed: ' + error.message);

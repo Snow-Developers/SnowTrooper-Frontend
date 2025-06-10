@@ -1,19 +1,25 @@
+import api, { getAPIToken } from "@/services/api";
+import { router } from "expo-router";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  SafeAreaView,
-  TouchableOpacity,
   ActivityIndicator,
+  Image,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 
-const API_KEY = "105a23a2564c476885021728250606";
+const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
 const CITY_NAME = "Columbus";
 
-const WeatherScreen = ({ userName = "User" }) => {
+
+
+export default function WeatherScreen() {
   type WeatherResponse = {
     location: {
       name: string;
@@ -53,11 +59,35 @@ const WeatherScreen = ({ userName = "User" }) => {
     fetchWeather();
   }, []);
 
+  useEffect(() => {
+    const userUID = getAuth().currentUser?.uid || '';
+    console.log(userUID);
+
+  if(userUID){
+      api.get(`/users/${userUID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== 'web' && {
+            'Content-Type': 'application/json',
+            }),
+          }
+      }).then((result) => {setUserFirstName(result.data.firstName || 'User')
+        console.log(result.data);
+      })
+      .catch((error) => {console.log("An error has occurred: ", error)});
+  }
+  }, []);
+
+  
+  const [userFirstName, setUserFirstName] = useState('');
+  
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Hey, {userName}</Text>
+        <Text style={styles.headerText}>Hey, {userFirstName}</Text>
       </View>
 
       {/* Weather Card */}
@@ -102,13 +132,13 @@ const WeatherScreen = ({ userName = "User" }) => {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity>
-          <Icon name="home" size={28} color="#fff" />
+          <Icon name="home" size={28} color="#fff"  />
         </TouchableOpacity>
         <TouchableOpacity>
           <Icon name="car" size={28} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity>
-          <Icon name="user" size={28} color="#fff" />
+          <Icon name="user" size={28} color="#fff" onPress={() => {router.push("/profile")}}/>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -155,4 +185,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WeatherScreen;
+
