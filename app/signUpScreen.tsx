@@ -289,7 +289,7 @@ export default function SignUpScreen() {
           {
             parameters: {
               fields: {
-                request: "id,name,email,first_name,last_name,picture.type(large)", // Request specific fields
+                string: "id,name,email,first_name,last_name,picture.type(large)", // Request specific fields
               },
             },
           },
@@ -357,10 +357,10 @@ export default function SignUpScreen() {
                     userRole,
                 });
 
-        alert("Successfully signed in with Facebook!");
+        // alert("Successfully signed in with Facebook!");
 
         // Navigate to next screen or update UI
-        // router.push("/dashboard");
+        router.replace("/SignUpViews/additionalInfo");
       } catch (error: any) {
         console.error("Facebook Sign-in error (Mobile):", error);
 
