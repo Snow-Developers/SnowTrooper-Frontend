@@ -6,10 +6,9 @@ import {
   GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithCredential,
-  signInWithPhoneNumber,
-  signInWithPopup,
+  signInWithPopup
 } from "firebase/auth";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native-paper";
 
@@ -20,9 +19,6 @@ declare global {
 }
 
 export default function LoginScreen() {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [callCode, setCallCode] = useState("");
-
   // Configure Google Sign-in only on native platforms
   useEffect(() => {
     if (Platform.OS !== "web") {
@@ -45,6 +41,7 @@ export default function LoginScreen() {
       signInWithPopup(auth, provider)
         .then((result) => {
           const user = result.user;
+          router.replace("/homeScreen");
           console.log("User logged in with Google:", user);
         })
         .catch((error) => {
@@ -62,6 +59,7 @@ export default function LoginScreen() {
 
         const credential = GoogleAuthProvider.credential(idToken);
         await signInWithCredential(auth, credential);
+        router.replace("/homeScreen");
       } catch (error) {
         console.error("Google login error:", error);
         alert(`Error during Google login: ${error}`);
@@ -69,44 +67,44 @@ export default function LoginScreen() {
     }
   };
 
-  const handlePhoneNumberLogin = async () => {
-    if (Platform.OS !== "web") {
-      return alert("Can't use phone number login on mobile.");
-    }
+  // const handlePhoneNumberLogin = async () => {
+  //   if (Platform.OS !== "web") {
+  //     return alert("Can't use phone number login on mobile.");
+  //   }
 
-    try {
-      const auth = getAuth();
+  //   try {
+  //     const auth = getAuth();
 
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneLogin", {
-          size: "invisible",
-          callback: (response: any) => {
-            console.log("reCAPTCHA solved");
-          },
-        });
-      }
+  //     if (!window.recaptchaVerifier) {
+  //       window.recaptchaVerifier = new RecaptchaVerifier(auth, "phoneLogin", {
+  //         size: "invisible",
+  //         callback: (response: any) => {
+  //           console.log("reCAPTCHA solved");
+  //         },
+  //       });
+  //     }
 
-      const e164Format = `+${callCode}${phoneNumber}`;
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        e164Format,
-        window.recaptchaVerifier
-      );
+  //     const e164Format = `+${callCode}${phoneNumber}`;
+  //     const confirmationResult = await signInWithPhoneNumber(
+  //       auth,
+  //       e164Format,
+  //       window.recaptchaVerifier
+  //     );
 
-      const code = window.prompt("Enter the verification code");
-      if (!code) {
-        alert("Missing code, try again.");
-        return;
-      }
+  //     const code = window.prompt("Enter the verification code");
+  //     if (!code) {
+  //       alert("Missing code, try again.");
+  //       return;
+  //     }
 
-      await confirmationResult.confirm(code);
-      console.log("Phone number login successful");
-    } catch (error) {
-      console.error("Phone login error:", error);
-      alert(`Phone login failed: ${error}`);
-      if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
-    }
-  };
+  //     await confirmationResult.confirm(code);
+  //     console.log("Phone number login successful");
+  //   } catch (error) {
+  //     console.error("Phone login error:", error);
+  //     alert(`Phone login failed: ${error}`);
+  //     if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+  //   }
+  // };
 
   const handleFacebookLogIn = async () => {
     if (Platform.OS === "web") {

@@ -5,12 +5,12 @@ import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
-  Button,
-  Checkbox,
-  HelperText,
-  Menu,
-  Text,
-  TextInput,
+    Button,
+    Checkbox,
+    HelperText,
+    Menu,
+    Text,
+    TextInput,
 } from "react-native-paper";
 import { useSignUpContext } from "../../context/SignUpContext";
 
@@ -379,9 +379,6 @@ export default function AdditionalInfo() {
       });
   };
 
-  const [touchedFields, setTouchedFields] = useState<{
-    [key: string]: boolean;
-  }>({});
   //Dynamically render necessary fields
   const renderField = (
     fieldName: string,
@@ -391,11 +388,6 @@ export default function AdditionalInfo() {
     style?: any
   ) => {
     const hasError = showErrors && validateField(fieldName);
-    const isTouched = touchedFields[fieldName];
-
-    if (!isTouched && value.trim() !== "") {
-      return null;
-    }
 
     return (
       <View style={styles.inputContainer}>
@@ -404,11 +396,7 @@ export default function AdditionalInfo() {
           label={`${label} *`}
           placeholder={`Enter your ${label.toLowerCase()}`}
           value={value}
-          onChangeText={(text) => {
-            setter(text);
-            //Set value as "touched", workaround for avoiding TextInput disappearing early
-            setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
-          }}
+          onChangeText={setter}
           error={hasError}
           style={style}
         />
