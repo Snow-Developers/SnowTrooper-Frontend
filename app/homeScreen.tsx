@@ -138,7 +138,7 @@ export default function WeatherScreen() {
           <Icon name="car" size={28} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity>
-          <Icon name="user" size={28} color="#fff" onPress={() => {router.push("/profile")}}/>
+          <Icon name="user" size={28} color="#fff" onPress={() => {router.push("/profileScreen")}}/>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
