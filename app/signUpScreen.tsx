@@ -27,6 +27,7 @@ declare global {
 
 export default function SignUpScreen() {
   const { setSignUpData } = useSignUpContext();
+  const [profilePicture, setProfilePicture] = useState("");
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -92,17 +93,19 @@ export default function SignUpScreen() {
 
           const additionalInfo = getAdditionalUserInfo(result);
           const profile = additionalInfo?.profile as any;
+          const profilePicture = profile?.picture;
           const firstName = profile?.given_name;
           const lastName = profile?.family_name;
           const email = profile?.email;
 
           setSignUpData({
-                    firstName,
-                    lastName,
-                    email,
-                    phoneNumber,
-                    userRole,
-                });
+              profilePicture,
+              firstName,
+              lastName,
+              email,
+              phoneNumber,
+              userRole,
+          });
 
           router.push("/SignUpViews/additionalInfo");
         }).catch((error : any) => {
@@ -139,10 +142,28 @@ export default function SignUpScreen() {
         console.log(googleCredential);
 
         // Sign-in the user with the credential
-        return signInWithCredential(getAuth(), googleCredential);
+        const result = await signInWithCredential(getAuth(), googleCredential);
+
+        const additionalInfo = getAdditionalUserInfo(result);
+        const profile = additionalInfo?.profile as any;
+        const profilePicture = profile?.picture;
+        const firstName = profile?.given_name;
+        const lastName = profile?.family_name;
+        const email = profile?.email;
+
+        setSignUpData({
+          profilePicture,
+          firstName,
+          lastName,
+          email,
+          phoneNumber,
+          userRole,
+        });
+
+        router.push("/SignUpViews/additionalInfo");
       } catch (error) {
         console.error("Google Sign-in error:", error);
-        alert(`Error during Google sign-in: ${error}`);
+        // alert(`Error during Google sign-in: ${error}`);
       }
     }
   };
@@ -284,41 +305,6 @@ export default function SignUpScreen() {
 
         //New code for grabing fb profile data
         console.log("Fetching Facebook user profile data...");
-        const profileRequest = new GraphRequest(
-          "/me",
-          {
-            parameters: {
-              fields: {
-                string: "id,name,email,first_name,last_name,picture.type(large)", // Request specific fields
-              },
-            },
-          },
-          (error : any, result : any) => {
-            if (error) {
-              console.error("Error fetching Facebook profile:", error);
-              // Handle the error appropriately, e.g., show an alert
-            } else {
-              console.log("Facebook profile data:", result);
-              
-              const fbFirstName = result.first_name;
-              const fbLastName = result.last_name;
-              const fbEmail = result.email;
-
-              setSignUpData({
-                firstName: fbFirstName || firstName, // Use FB name if available, otherwise your existing firstName
-                lastName: fbLastName || lastName, // Use FB name if available, otherwise your existing lastName
-                email: fbEmail || email, // Use FB email if available, otherwise your existing email
-                phoneNumber,
-                userRole,
-              });
-            }
-          }
-        );
-
-        // Start the graph request
-        new GraphRequestManager().addRequest(profileRequest).start();
-        //End
-
 
         // Create a Firebase credential with the token
         console.log("Creating Firebase credential...");
@@ -340,24 +326,46 @@ export default function SignUpScreen() {
           "User signed up successfully with Facebook (Mobile):",
           user
         );
+        
 
-        // Facebook login info to use for later
-        console.log("Facebook Mobile Sign Up Details:", {
-          uid: user.uid,
-          displayName: user.displayName,
-          email: user.email,
-          photoUrl: user.photoURL,
-        });
+        const profileRequest = new GraphRequest(
+          "/me",
+          {
+            parameters: {
+              fields: {
+                string: "id,name,email,first_name,last_name,picture.type(large)", // Request specific fields
+              },
+            },
+          },
+          (error : any, result : any) => {
+            if (error) {
+              console.error("Error fetching Facebook profile:", error);
+              // Handle the error appropriately, e.g., show an alert
+            } else {
+              console.log("Facebook profile data:", result);
+              
+              const fbProfilePicture = result.picture?.data?.url;
+              const fbFirstName = result.first_name;
+              const fbLastName = result.last_name;
+              const fbEmail = result.email;
 
-        setSignUpData({
-                    firstName ,
-                    lastName,
-                    email,
-                    phoneNumber,
-                    userRole,
-                });
+              setSignUpData({
+                profilePicture: fbProfilePicture || profilePicture,
+                firstName: fbFirstName || firstName, // Use FB name if available, otherwise your existing firstName
+                lastName: fbLastName || lastName, // Use FB name if available, otherwise your existing lastName
+                email: fbEmail || email, // Use FB email if available, otherwise your existing email
+                phoneNumber,
+                userRole,
+              });
+            }
+          }
+        );
 
-        // alert("Successfully signed in with Facebook!");
+        // Start the graph request
+        new GraphRequestManager().addRequest(profileRequest).start();
+        //End
+
+        alert("Successfully signed in with Facebook!");
 
         // Navigate to next screen or update UI
         router.replace("/SignUpViews/additionalInfo");

@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 interface SignUpData {
+  profilePicture: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -14,6 +15,7 @@ interface SignUpContextType {
 }
 
 const defaultData: SignUpData = {
+  profilePicture: '',
   firstName: '',
   lastName: '',
   email: '',

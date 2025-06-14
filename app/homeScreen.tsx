@@ -61,22 +61,23 @@ export default function WeatherScreen() {
 
   useEffect(() => {
     const userUID = getAuth().currentUser?.uid || '';
-    console.log(userUID);
+    console.log("userUID: ",userUID);
 
-  if(userUID){
-      api.get(`/users/${userUID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAPIToken()}`,
-            ...(Platform.OS !== 'web' && {
-            'Content-Type': 'application/json',
-            }),
-          }
-      }).then((result) => {setUserFirstName(result.data.firstName || 'User')
-        console.log(result.data);
-      })
-      .catch((error) => {console.log("An error has occurred: ", error)});
-  }
+    if(userUID){
+        api.get(`/users/${userUID}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== 'web' && {
+              'Content-Type': 'application/json',
+              }),
+            }
+        }).then((result) => {
+          setUserFirstName(result.data.firstName || 'User');
+          console.log(result.data);
+        })
+        .catch((error) => {console.log("An error has occurred: ", error)});
+    }
   }, []);
 
   

@@ -4,19 +4,17 @@ import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
-  Button,
-  Checkbox,
-  HelperText,
-  Menu,
-  Text,
-  TextInput,
+    Button,
+    Checkbox,
+    HelperText,
+    Menu,
+    Text,
+    TextInput,
 } from "react-native-paper";
-import { useSignUpContext } from "../../context/SignUpContext";
-import api, { getAPIToken } from "../../services/api";
+import api, { getAPIToken } from "../services/api";
 
-export default function AdditionalInfo() {
+export default function EditInfo() {
   //For React global context
-  const { signUpData } = useSignUpContext();
   const fieldKeys = [
     "firstName",
     "lastName",
@@ -36,16 +34,6 @@ export default function AdditionalInfo() {
     "documentsUploaded",
   ];
 
-  //Set global context values upon render
-  useEffect(() => {
-    setUid(getAuth().currentUser?.uid || "");
-    setProfilePicture(signUpData.profilePicture);
-    setFirstName(signUpData.firstName);
-    setLastName(signUpData.lastName);
-    setEmail(signUpData.email);
-    setPhoneNumber(signUpData.phoneNumber);
-    setUserRole(signUpData.userRole);
-  }, [signUpData]);
 
   //General user info
   const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
@@ -59,6 +47,49 @@ export default function AdditionalInfo() {
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
+
+
+  //Prefill values upon render
+  useEffect(() => {
+    api.get(`/users/${uid}`, {
+        headers: {
+        Authorization: `Bearer ${getAPIToken()}`,
+        ...(Platform.OS !== 'web' && {
+            'Content-Type': 'application/json',
+        }),
+        },
+    })
+    .then((response) => {
+        const data = response.data;
+
+        setProfilePicture(data.profilePicture || '');
+        setFirstName(data.firstName || '');
+        setLastName(data.lastName || '');
+        setEmail(data.email || '');
+        setPhoneNumber(data.phoneNumber || '');
+        setUserRole(data.role || 'Customer');
+        setStreetAddress(data.streetAddress || '');
+        setCity(data.city || '');
+        setState(data.state || '');
+        setZipCode(data.zipCode || '');
+
+        // Customer-specific fields
+        setCustomerPropertySize(data.customerPropertySize || '');
+        setHasSteps(data.hasPropertySteps ?? true);
+        setIsPetFriendly(data.usePetFriendlyMaterial ?? true);
+        setSelectedCleaningSpecifics(data.cleaningSpecifics || []);
+        setSelectedPrefTime(data.prefTime || []);
+
+        // Contractor-specific fields
+        setSelectedPropertySizes(data.prefPropertySizeWork || []);
+        setCrewSize(data.crewSize || '');
+        setRadiusSize(data.prefRadiusWork || '');
+        setSelectedEquipmentItems(data.equipments || []);
+    })
+    .catch((error) => {
+        console.error("Error fetching user profile:", error);
+    });
+    }, [uid]);
 
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
@@ -292,7 +323,7 @@ export default function AdditionalInfo() {
     }
   };
 
-  const handleContractorPref = async () => {
+  const handleSaveChanges = async () => {
     setShowErrors(true);
 
     //Alert user of fields missing proper values
@@ -363,7 +394,7 @@ export default function AdditionalInfo() {
 
     //Sends HTTP POST request to backend api
     api
-      .post(`/users/create`, formData, {
+      .put(`/users/update/${uid}`, formData, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
           ...(Platform.OS !== "web" && {
@@ -372,8 +403,8 @@ export default function AdditionalInfo() {
         },
       })
       .then(() => {
-        console.log("Document uploaded sucessfully!");
-        router.replace("/homeScreen");
+        console.log("Profile has been updated successfully");
+        router.back();
       })
       .catch((error) => {
         console.log("Response Data:", error);
@@ -802,12 +833,10 @@ export default function AdditionalInfo() {
         )}
 
         <Button
-          mode="contained"
-          onPress={handleContractorPref}
-          style={styles.signupButton}
-        >
-          Submit
-        </Button>
+        mode="contained"
+        onPress={handleSaveChanges}
+        style={styles.signupButton}
+        >Save Changes</Button>
       </View>
     </ScrollView>
   );

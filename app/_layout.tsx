@@ -1,10 +1,12 @@
 import api, { getAPIToken } from "@/services/api";
-import { Stack, router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from 'react';
 import { Platform } from "react-native";
-import { DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { BottomNavigation, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { SignUpProvider } from '../context/SignUpContext';
+import WeatherScreen from "./homeScreen";
+import ProfileScreen from "./profileScreen";
 
 
 const customTheme = {
@@ -18,7 +20,6 @@ const customTheme = {
 };
 
 export default function RootLayout() {
-  const [index, setIndex] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -35,12 +36,13 @@ export default function RootLayout() {
          }).then((result) => {
             if(result.data.uid){
               router.replace("/homeScreen");
+              console.log("Result Data from API: ", result.data);
               console.log("User is currently logged in: ", user);
             }
          }).catch((error) => {
             console.log("An error has occurred: ", error);
-            if(error.code === 404){
-              console.log("User profile cannot be found within Firestore");
+            if(error.status === 404){
+              console.log("User profile cannot be found within Firestore or user profile has not been created yet");
             }
          });
           
@@ -54,6 +56,23 @@ export default function RootLayout() {
   }, []);
 
 
+
+
+  const [index, setIndex] = useState(0);
+
+  //Create icons on bottom navbar
+  const [routes] = useState([
+    { key: 'home', title: 'Home', focusedIcon: 'heart'},
+    { key: 'profile', title: 'Profile', focusedIcon: 'album'},
+  ]);
+
+  //Map icons to screens
+  const renderScene = BottomNavigation.SceneMap({
+    home: WeatherScreen,
+    profile: ProfileScreen,
+  });
+
+
   return (
     <PaperProvider theme={customTheme}>
         <SignUpProvider>
@@ -63,6 +82,11 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: "#fff" },
             }}
           />
+          {/* <BottomNavigation
+            navigationState={{ index, routes }}
+            onIndexChange={setIndex}
+            renderScene={renderScene}
+          /> */}
         </SignUpProvider>
     </PaperProvider>
   );

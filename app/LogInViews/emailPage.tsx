@@ -35,8 +35,8 @@ export default function EmailLoginPage() {
         Log In
       </Text>
 
-      {/* <Text variant="labelLarge">Email</Text> */}
       <TextInput
+        mode="outlined"
         label="Email"
         placeholder="Enter your email"
         value={email}
@@ -46,8 +46,8 @@ export default function EmailLoginPage() {
         style={styles.input}
       />
 
-      {/* <Text variant="labelLarge">Password</Text> */}
       <TextInput
+        mode="outlined"
         label="Password"
         placeholder="Enter your password"
         value={password}
@@ -71,7 +71,6 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 60,
     paddingHorizontal: 24,
-    alignItems: "center",
   },
   title: {
     fontSize: 24,
@@ -85,9 +84,6 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 4,
     borderRadius: 8,
     marginBottom: 20,
     backgroundColor: "#fff",

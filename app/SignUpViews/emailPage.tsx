@@ -109,7 +109,7 @@ export default function EmailPage() {
           secureTextEntry
         />
 
-        <Text variant="headlineMedium" style={styles.rolesText}>
+        {/* <Text variant="headlineMedium" style={styles.rolesText}>
           Select your role
         </Text>
 
@@ -126,8 +126,7 @@ export default function EmailPage() {
               userRole === "Customer" && styles.selectedButtonLabel,
             ]}
           >
-            {" "}
-            Customer{" "}
+            Customer
           </Button>
 
           <Button
@@ -142,10 +141,9 @@ export default function EmailPage() {
               userRole === "Contractor" && styles.selectedButtonLabel,
             ]}
           >
-            {" "}
-            Contractor{" "}
+            Contractor
           </Button>
-        </View>
+        </View> */}
 
         <Button
           mode="contained"
