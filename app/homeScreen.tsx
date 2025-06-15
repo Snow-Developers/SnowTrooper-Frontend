@@ -1,6 +1,6 @@
 import api, { getAPIToken } from "@/services/api";
 import { router } from "expo-router";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -59,29 +59,27 @@ export default function WeatherScreen() {
     fetchWeather();
   }, []);
 
-  useEffect(() => {
-    const userUID = getAuth().currentUser?.uid || '';
-    console.log("userUID: ",userUID);
-
-    if(userUID){
-        api.get(`/users/${userUID}`,
-          {
-            headers: {
-              Authorization: `Bearer ${getAPIToken()}`,
-              ...(Platform.OS !== 'web' && {
-              'Content-Type': 'application/json',
-              }),
-            }
-        }).then((result) => {
-          setUserFirstName(result.data.firstName || 'User');
-          console.log(result.data);
-        })
-        .catch((error) => {console.log("An error has occurred: ", error)});
-    }
-  }, []);
-
-  
+  //Get user first name from Firestore
   const [userFirstName, setUserFirstName] = useState('');
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user : any) => {
+      if(!user) return;
+          api.get(`/users/${user.uid}`,
+            {
+              headers: {
+                Authorization: `Bearer ${getAPIToken()}`,
+                ...(Platform.OS !== 'web' && {
+                'Content-Type': 'application/json',
+                }),
+              }
+          }).then((result) => {
+            setUserFirstName(result.data.firstName || 'User');
+            console.log(result.data);
+          })
+          .catch((error) => {console.log("An error has occurred: ", error)});
+      });
+      return () => unsubscribe();
+  }, []);
   
 
   return (

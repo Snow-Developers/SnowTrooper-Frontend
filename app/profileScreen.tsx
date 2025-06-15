@@ -1,6 +1,6 @@
 import api, { getAPIToken } from "@/services/api";
 import { router } from "expo-router";
-import { deleteUser, getAuth, signOut } from "firebase/auth";
+import { deleteUser, getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -14,7 +14,8 @@ import {
 import Icon from "react-native-vector-icons/FontAwesome";
 
 export default function ProfileScreen() {
-  const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
+
+  // const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
   const [profilePicture, setProfilePicture] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -40,42 +41,46 @@ export default function ProfileScreen() {
   const [equipmentTypes, setEquipmentTypes] = useState([]);
 
   useEffect(() => {
-     api.get(`/users/${uid}`,
-          {
-            headers: {
-              Authorization: `Bearer ${getAPIToken()}`,
-              ...(Platform.OS !== 'web' && {
-              'Content-Type': 'application/json',
-              }),
-            }
-        }).then((result) => {
-          //Profile details
-          setProfilePicture(result.data.profilePicture || '');
-          setFirstName(result.data.firstName || '');
-          setLastName(result.data.lastName || '');
-          setEmail(result.data.email || '');
-          setPhoneNumber(result.data.phoneNumber || '');
-          setUserRole(result.data.userRole || 'Customer');
-          setStreetAddress(result.data.streetAddress || '');
-          setCity(result.data.city || '');
-          setState(result.data.state || '');
-          setZipCode(result.data.zipCode || '');
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
+      if(!user) return;
+      api.get(`/users/${user.uid}`,
+            {
+              headers: {
+                Authorization: `Bearer ${getAPIToken()}`,
+                ...(Platform.OS !== 'web' && {
+                'Content-Type': 'application/json',
+                }),
+              }
+          }).then((result) => {
+            //Profile details
+            setProfilePicture(result.data.profilePicture || '');
+            setFirstName(result.data.firstName || '');
+            setLastName(result.data.lastName || '');
+            setEmail(result.data.email || '');
+            setPhoneNumber(result.data.phoneNumber || '');
+            setUserRole(result.data.userRole || 'Customer');
+            setStreetAddress(result.data.streetAddress || '');
+            setCity(result.data.city || '');
+            setState(result.data.state || '');
+            setZipCode(result.data.zipCode || '');
 
-          // Customer fields
-          setCustomerPropertySize(result.data.customerPropertySize || '');
-          setCleaningSpecifics(result.data.cleaningSpecifics || []);
-          setPreferredTimes(result.data.prefTime || []);
-          setPropertySteps(result.data.hasPropertySteps || null);
-          setUsePetFriendlyMaterial(result.data.usePetFriendlyMaterial || null);
+            // Customer fields
+            setCustomerPropertySize(result.data.customerPropertySize || '');
+            setCleaningSpecifics(result.data.cleaningSpecifics || []);
+            setPreferredTimes(result.data.prefTime || []);
+            setPropertySteps(result.data.hasPropertySteps || null);
+            setUsePetFriendlyMaterial(result.data.usePetFriendlyMaterial || null);
 
-          // Contractor fields
-          setCrewSize(result.data.crewSize || '');
-          setContractorPropertySize(result.data.prefPropertySizeWork || []);
-          setPreferredRadius(result.data.prefRadiusWork || '');
-          setEquipmentTypes(result.data.equipments || []);
-        })
-        .catch((error) => {console.log("An error has occurred: ", error)});
-  }, [uid]);
+            // Contractor fields
+            setCrewSize(result.data.crewSize || '');
+            setContractorPropertySize(result.data.prefPropertySizeWork || []);
+            setPreferredRadius(result.data.prefRadiusWork || '');
+            setEquipmentTypes(result.data.equipments || []);
+          })
+          .catch((error) => {console.log("An error has occurred: ", error)});
+        });
+        return () => unsubscribe();
+  }, []);
 
 
   const handleLogOut = async () => {
@@ -268,7 +273,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: '#555',
   },
-  
   container: {
     flex: 1,
     alignItems: "center",
