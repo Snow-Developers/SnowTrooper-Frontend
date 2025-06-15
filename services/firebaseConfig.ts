@@ -1,6 +1,6 @@
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from "firebase/app";
-import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { browserLocalPersistence, getAuth, getReactNativePersistence, initializeAuth, setPersistence } from "firebase/auth";
 import { Platform } from "react-native";
 
 const firebaseConfig = {
@@ -13,24 +13,20 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig);
-// const auth = getAuth(app);
 
-const auth = Platform.OS !== "web"
-  ? initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-    })
-  : getAuth(app);
+let auth;
 
-// let appCheck;
-
-// if (Platform.OS === 'web') {
-//   appCheck = initializeAppCheck(app, {
-//     provider: new ReCaptchaV3Provider(process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY || ''),
-//     isTokenAutoRefreshEnabled: true
-//   });
-// }
-
+if (Platform.OS === "web") {
+  auth = getAuth(app);
+  setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+      console.error("Error setting web auth persistence:", error);
+  });
+} else {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  });
+}
 
 export default auth;
-// export { appCheck };
 

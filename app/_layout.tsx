@@ -1,12 +1,9 @@
 import api, { getAPIToken } from "@/services/api";
-import { router, Stack } from "expo-router";
+import { router, Stack, usePathname } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from 'react';
-import { Platform } from "react-native";
-import { BottomNavigation, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { SignUpProvider } from '../context/SignUpContext';
-import WeatherScreen from "./homeScreen";
-import ProfileScreen from "./profileScreen";
 
 
 const customTheme = {
@@ -21,9 +18,9 @@ const customTheme = {
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const pathname = usePathname(); // current route path
 
   useEffect(() => {
-    if(Platform.OS !== "web"){
       const unsubscribe = onAuthStateChanged(getAuth(), (user : any) => {
         if(user){ 
           
@@ -35,9 +32,12 @@ export default function RootLayout() {
                 }
          }).then((result) => {
             if(result.data.uid){
-              router.replace("/homeScreen");
-              console.log("Result Data from API: ", result.data);
+              console.log("Path: ", pathname);
+              if(pathname === "/"){
+                router.replace("/homeScreen");
+              }
               console.log("User is currently logged in: ", user);
+              
             }
          }).catch((error) => {
             console.log("An error has occurred: ", error);
@@ -52,25 +52,24 @@ export default function RootLayout() {
         setIsAuthenticated(!!user);
       });
       return unsubscribe;
-    }
-  }, []);
+  }, [pathname]);
 
 
 
+  //Working on navbar
+  // const [index, setIndex] = useState(0);
 
-  const [index, setIndex] = useState(0);
+  // //Create icons on bottom navbar
+  // const [routes] = useState([
+  //   { key: 'home', title: 'Home', focusedIcon: 'heart'},
+  //   { key: 'profile', title: 'Profile', focusedIcon: 'album'},
+  // ]);
 
-  //Create icons on bottom navbar
-  const [routes] = useState([
-    { key: 'home', title: 'Home', focusedIcon: 'heart'},
-    { key: 'profile', title: 'Profile', focusedIcon: 'album'},
-  ]);
-
-  //Map icons to screens
-  const renderScene = BottomNavigation.SceneMap({
-    home: WeatherScreen,
-    profile: ProfileScreen,
-  });
+  // //Map icons to screens
+  // const renderScene = BottomNavigation.SceneMap({
+  //   home: WeatherScreen,
+  //   profile: ProfileScreen,
+  // });
 
 
   return (
