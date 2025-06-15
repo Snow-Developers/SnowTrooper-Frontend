@@ -1,6 +1,13 @@
 import axios from "axios";
+import { Platform } from "react-native";
 
-const API_URL = "http://192.168.1.100:8080/api";
+let API_URL = "";
+if (Platform.OS === "android") {
+  API_URL = "http://10.0.2.2:8080/api";
+} else {
+  API_URL = "http://localhost:8080/api";
+}
+
 let apiToken: any;
 
 export function getAPIToken() {
