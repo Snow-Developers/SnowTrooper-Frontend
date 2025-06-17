@@ -109,13 +109,8 @@ export default function SignUpScreen() {
 
           router.push("/SignUpViews/additionalInfo");
         }).catch((error : any) => {
-          // Handle Errors here.
-          const errorCode = error.code;
           const errorMessage = error.message;
-          // The email of the user's account used.
-          const email = error.customData.email;
-          // The AuthCredential type that was used.
-          const credential = GoogleAuthProvider.credentialFromError(error);
+          console.log("An error has occured: ", errorMessage)
         });
     } else {
       try {

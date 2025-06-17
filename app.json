@@ -46,6 +46,18 @@
           }
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow SnowTroopers to use your location."
+        }
+      ],
+      [
+        "expo-font", 
+        {
+          "fonts": ["./assets/fonts/tt-supermolot-neue-trl.ttf"]
+        }
+      ],
       "@react-native-google-signin/google-signin",
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
