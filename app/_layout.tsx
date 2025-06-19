@@ -2,8 +2,10 @@ import api, { getAPIToken } from "@/services/api";
 import { router, Stack, usePathname } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from 'react';
-import { DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { StyleSheet } from "react-native";
+import { Appbar, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { SignUpProvider } from '../context/SignUpContext';
+
 
 
 const customTheme = {
@@ -34,7 +36,7 @@ export default function RootLayout() {
             if(result.data.uid){
               console.log("Path: ", pathname);
               if(pathname === "/"){
-                router.replace("/homeScreen");
+                router.replace("/(tabs)/homeScreen");
               }
               console.log("User is currently logged in: ", user);
               
@@ -54,39 +56,50 @@ export default function RootLayout() {
       return unsubscribe;
   }, [pathname]);
 
-
-
-  //Working on navbar
-  // const [index, setIndex] = useState(0);
-
-  // //Create icons on bottom navbar
-  // const [routes] = useState([
-  //   { key: 'home', title: 'Home', focusedIcon: 'heart'},
-  //   { key: 'profile', title: 'Profile', focusedIcon: 'album'},
-  // ]);
-
-  // //Map icons to screens
-  // const renderScene = BottomNavigation.SceneMap({
-  //   home: WeatherScreen,
-  //   profile: ProfileScreen,
-  // });
-
+  const appBarPath: { [key: string]: string } = {
+    "/homeScreen": "Home",
+    "/profileScreen": "Profile",
+    "/ordersScreen": "Orders"
+  };
 
   return (
     <PaperProvider theme={customTheme}>
         <SignUpProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#fff" },
-            }}
-          />
-          {/* <BottomNavigation
-            navigationState={{ index, routes }}
-            onIndexChange={setIndex}
-            renderScene={renderScene}
-          /> */}
+          {isAuthenticated && (
+            <Appbar.Header style = {{
+            height: 50,
+            backgroundColor: "#00c1de",
+          }}
+          mode = "center-aligned">
+            <Appbar.Content title= {appBarPath[pathname] || "SnowTroopers"} titleStyle = {styles.appBarTitle}/>
+          </Appbar.Header>
+          )}
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: "#fff" },
+              }}
+            />
+          
         </SignUpProvider>
     </PaperProvider>
   );
 }
+
+
+const styles = StyleSheet.create({
+  appBarTitle: {
+    fontFamily: "tt-supermolot-neue-trl"
+
+  },
+  background: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 442, 
+    height: 275,
+    marginBottom: 30,
+    opacity: 0.04,
+
+  },
+})

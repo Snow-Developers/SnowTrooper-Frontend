@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
 
 export default function ProfileScreen() {
 
@@ -222,7 +221,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      {/* <View style={styles.bottomNav}>
         <TouchableOpacity>
           <Icon
             name="home"
@@ -246,7 +245,7 @@ export default function ProfileScreen() {
             }}
           />
         </TouchableOpacity>
-      </View>
+      </View> */}
     </View>
     
         
@@ -276,12 +275,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 60,
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2",
   },
   editProfileButton: {
     position: "absolute",
-    top: 60,
+    top: 20,
     right: 20,
   },
   editProfileText: {
