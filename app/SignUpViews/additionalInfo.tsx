@@ -380,7 +380,7 @@ export default function AdditionalInfo() {
       });
 
       if(userRole === "Customer"){
-        router.replace("/(tabs)/homeScreen");
+        router.replace("/(tabs)/customerHomeScreen");
       }
   };
 
