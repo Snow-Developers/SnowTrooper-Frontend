@@ -1,6 +1,13 @@
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { browserLocalPersistence, getAuth, getReactNativePersistence, initializeAuth, setPersistence } from "firebase/auth";
+import {
+  browserLocalPersistence,
+  getAuth,
+  getReactNativePersistence,
+  initializeAuth,
+  setPersistence,
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
 const firebaseConfig = {
@@ -10,17 +17,18 @@ const firebaseConfig = {
   storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-}
+};
 
 const app = initializeApp(firebaseConfig);
 
-let auth : any;
+let auth: any;
+// Initialize Firestore
+export const db = getFirestore(app);
 
 if (Platform.OS === "web") {
   auth = getAuth(app);
-  setPersistence(auth, browserLocalPersistence)
-    .catch((error) => {
-      console.error("Error setting web auth persistence:", error);
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Error setting web auth persistence:", error);
   });
 } else {
   auth = initializeAuth(app, {
@@ -29,4 +37,3 @@ if (Platform.OS === "web") {
 }
 
 export default auth;
-
