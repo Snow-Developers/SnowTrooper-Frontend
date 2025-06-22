@@ -29,6 +29,17 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="customerHomeScreen"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <MaterialIcons name="home" size={35} color={focused ? "#FFFFFF" : "#212322"} />
+            </View>
+          ),
+        }}
+      />
+      
+      <Tabs.Screen
         name="ordersScreen"
         options={{
           tabBarIcon: ({ focused }) => (

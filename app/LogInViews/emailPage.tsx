@@ -1,9 +1,10 @@
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Platform } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import auth from "../../services/firebaseConfig";
+import api, { getAPIToken } from "../../services/api";
 
 export default function EmailLoginPage() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,29 @@ export default function EmailLoginPage() {
         email: user.email,
       });
       alert("Login Successful");
-      router.replace("/homeScreen");
+      api.get(`/users/${user.uid}`, {
+        headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== 'web' && {
+                'Content-Type': 'application/json',
+            }),
+        },
+      })
+      .then((response) => {
+        const data = response.data;
+        console.log("User role data:", data.role);
+        if (data.role === "Customer") {
+          router.replace("/customerHomeScreen");
+        } else if (data.role === "Contractor") {
+          router.replace("/homeScreen");
+        } else {
+          console.error("Unknown user role:", data.role);
+          alert("Unknown user role.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching user role:", error);
+      });
     } catch (error: any) {
       console.error("Login failed:", error);
       alert("Login Failed: " + error.message);

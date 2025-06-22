@@ -373,14 +373,14 @@ export default function AdditionalInfo() {
       })
       .then(() => {
         console.log("Document uploaded sucessfully!");
-        router.replace("/homeScreen");
+        router.replace("/(tabs)/homeScreen");
       })
       .catch((error) => {
         console.log("Response Data:", error);
       });
 
       if(userRole === "Customer"){
-        router.replace("/homeScreen");
+        router.replace("/(tabs)/customerHomeScreen");
       }
   };
 

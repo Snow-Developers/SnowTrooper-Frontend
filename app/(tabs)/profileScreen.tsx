@@ -14,7 +14,6 @@ import {
 
 export default function ProfileScreen() {
 
-  // const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
   const [profilePicture, setProfilePicture] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -219,33 +218,6 @@ export default function ProfileScreen() {
           <Text style={styles.deleteButtonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Bottom Navigation */}
-      {/* <View style={styles.bottomNav}>
-        <TouchableOpacity>
-          <Icon
-            name="home"
-            size={28}
-            color="#fff"
-            onPress={() => {
-              router.push("/homeScreen");
-            }}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Icon name="car" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Icon
-            name="user"
-            size={28}
-            color="#fff"
-            onPress={() => {
-              router.push("/profileScreen");
-            }}
-          />
-        </TouchableOpacity>
-      </View> */}
     </View>
     
         

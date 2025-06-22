@@ -38,6 +38,7 @@ export default function EmailPage() {
 
         //Add info to global context
         setSignUpData({
+          profilePicture: "",
           firstName,
           lastName,
           email,

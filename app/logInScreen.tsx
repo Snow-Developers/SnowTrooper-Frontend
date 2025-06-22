@@ -11,6 +11,7 @@ import {
 import React, { useEffect } from "react";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button } from "react-native-paper";
+import api, { getAPIToken } from "../services/api";
 
 declare global {
   interface Window {
@@ -41,8 +42,32 @@ export default function LoginScreen() {
       signInWithPopup(auth, provider)
         .then((result) => {
           const user = result.user;
-          router.replace("/homeScreen");
           console.log("User logged in with Google:", user);
+          console.log("API Token:", getAPIToken());
+          console.log("user .uid:", user.uid);
+          api.get(`/users/${user.uid}`, {
+          headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== 'web' && {
+                  'Content-Type': 'application/json',
+              }),
+          },
+          })
+          .then((response) => {
+            const data = response.data;
+            console.log("User role data:", data.role);
+            if (data.role === "Customer") {
+              router.replace("/customerHomeScreen");
+            } else if (data.role === "Contractor") {
+              router.replace("/homeScreen");
+            } else {
+              console.error("Unknown user role:", data.role);
+              alert("Unknown user role.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user role:", error);
+          });
         })
         .catch((error) => {
           console.error("Google login error:", error);
@@ -58,8 +83,34 @@ export default function LoginScreen() {
         if (!idToken) throw new Error("No ID token found");
 
         const credential = GoogleAuthProvider.credential(idToken);
-        await signInWithCredential(auth, credential);
+        const result = await signInWithCredential(auth, credential);
+        const user = result.user;
         router.replace("/homeScreen");
+        console.log("API Token:", getAPIToken());
+        console.log("user .uid:", user.uid);
+          api.get(`/users/${user.uid}`, {
+          headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(["ios", "android", "windows", "macos"].includes(Platform.OS) && {
+                  'Content-Type': 'application/json',
+              }),
+          },
+          })
+          .then((response) => {
+            const data = response.data;
+            console.log("User role data:", data.role);
+            if (data.role === "Customer") {
+              router.replace("/customerHomeScreen");
+            } else if (data.role === "Contractor") {
+              router.replace("/homeScreen");
+            } else {
+              console.error("Unknown user role:", data.role);
+              alert("Unknown user role.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user role:", error);
+          });
       } catch (error) {
         console.error("Google login error:", error);
         alert(`Error during Google login: ${error}`);
@@ -131,6 +182,31 @@ export default function LoginScreen() {
           email: user.email,
           photoUrl: user.photoURL,
         });
+        console.log("API Token:", getAPIToken());
+          console.log("user .uid:", user.uid);
+          api.get(`/users/${user.uid}`, {
+          headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== 'web' && {
+                  'Content-Type': 'application/json',
+              }),
+          },
+          })
+          .then((response) => {
+            const data = response.data;
+            console.log("User role data:", data.role);
+            if (data.role === "Customer") {
+              router.replace("/customerHomeScreen");
+            } else if (data.role === "Contractor") {
+              router.replace("/homeScreen");
+            } else {
+              console.error("Unknown user role:", data.role);
+              alert("Unknown user role.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user role:", error);
+          });
       } catch (error: any) {
         console.error("Facebook Sign-in error:", error);
 
@@ -225,6 +301,32 @@ export default function LoginScreen() {
         });
 
         alert("Successfully signed in with Facebook!");
+
+        console.log("API Token:", getAPIToken());
+          console.log("user .uid:", user.uid);
+          api.get(`/users/${user.uid}`, {
+          headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(["ios", "android", "windows", "macos"].includes(Platform.OS) && {
+                  'Content-Type': 'application/json',
+              }),
+          },
+          })
+          .then((response) => {
+            const data = response.data;
+            console.log("User role data:", data.role);
+            if (data.role === "Customer") {
+              router.replace("/customerHomeScreen");
+            } else if (data.role === "Contractor") {
+              router.replace("/homeScreen");
+            } else {
+              console.error("Unknown user role:", data.role);
+              alert("Unknown user role.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user role:", error);
+          });
 
         // Navigate to next screen or update UI
         // router.push("/dashboard");

@@ -1,5 +1,6 @@
 import api, { getAPIToken } from "@/services/api";
 import * as Location from 'expo-location';
+import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
@@ -9,7 +10,8 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  View
+  View,
+  Pressable
 } from "react-native";
 
 const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
@@ -133,7 +135,7 @@ export default function WeatherScreen() {
         <View style={styles.card}>
           {loading ? (
             <ActivityIndicator size="large" color="#4ac1d3" />
-          ) : weatherData && weatherData.location ? (
+          ) : weatherData?.location?.name && weatherData ? (
             <>
               <Text style={styles.cardTitle}>
                 Now in {weatherData.location.name}
@@ -167,6 +169,9 @@ export default function WeatherScreen() {
             <Text style={styles.footerText}>Failed to load weather data.</Text>
           )}
         </View>
+        <Pressable style={styles.createOrderButton} onPress={() => router.push('/customerOrderRequest')}>
+            <Text style={styles.buttonText}>Create New Order</Text>
+        </Pressable>
       </SafeAreaView>
   );
 };
@@ -211,16 +216,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingVertical: 12,
   },
-  // imageBackground: {
-  //   justifyContent: "center",
-  // },
-  // image: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   opacity: 1,
-  //   position: 'absolute',
-  //   zIndex: 1
-  // },
+  createOrderButton: {
+    backgroundColor: '#4ac1d3',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignSelf: 'center',
+    marginTop: 10,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    },
 });
-
-
