@@ -46,15 +46,17 @@ export default function LoginScreen() {
           console.log("API Token:", getAPIToken());
           console.log("user .uid:", user.uid);
           api.get(`/users/${user.uid}`, {
-          headers: {
-              Authorization: `Bearer ${getAPIToken()}`,
-              ...(Platform.OS !== 'web' && {
-                  'Content-Type': 'application/json',
-              }),
-          },
+            headers: {
+                Authorization: `Bearer ${getAPIToken()}`,
+                ...(Platform.OS !== 'web' && {
+                    'Content-Type': 'application/json',
+                }),
+                "ngrok-skip-browser-warning": "11111"
+            },
           })
           .then((response) => {
             const data = response.data;
+            console.log("UserData: ", data);
             console.log("User role data:", data.role);
             if (data.role === "Customer") {
               router.replace("/customerHomeScreen");
@@ -94,10 +96,12 @@ export default function LoginScreen() {
               ...(["ios", "android", "windows", "macos"].includes(Platform.OS) && {
                   'Content-Type': 'application/json',
               }),
+              "ngrok-skip-browser-warning": "11111",
           },
           })
           .then((response) => {
             const data = response.data;
+            
             console.log("User role data:", data.role);
             if (data.role === "Customer") {
               router.replace("/customerHomeScreen");
@@ -190,6 +194,7 @@ export default function LoginScreen() {
               ...(Platform.OS !== 'web' && {
                   'Content-Type': 'application/json',
               }),
+              "ngrok-skip-browser-warning": "11111",
           },
           })
           .then((response) => {
@@ -310,6 +315,7 @@ export default function LoginScreen() {
               ...(["ios", "android", "windows", "macos"].includes(Platform.OS) && {
                   'Content-Type': 'application/json',
               }),
+              "ngrok-skip-browser-warning": "11111",
           },
           })
           .then((response) => {
