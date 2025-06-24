@@ -48,6 +48,7 @@ export default function ProfileScreen() {
                 ...(Platform.OS !== 'web' && {
                 'Content-Type': 'application/json',
                 }),
+                "ngrok-skip-browser-warning": "11111",
               }
           }).then((result) => {
             //Profile details
@@ -56,7 +57,7 @@ export default function ProfileScreen() {
             setLastName(result.data.lastName || '');
             setEmail(result.data.email || '');
             setPhoneNumber(result.data.phoneNumber || '');
-            setUserRole(result.data.userRole || 'Customer');
+            setUserRole(result.data.role || 'Customer');
             setStreetAddress(result.data.streetAddress || '');
             setCity(result.data.city || '');
             setState(result.data.state || '');

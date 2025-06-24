@@ -31,6 +31,7 @@ export default function RootLayout() {
                 headers: {
                   Authorization: `Bearer ${getAPIToken()}`,
                   'Content-Type': 'application/json',
+                  "ngrok-skip-browser-warning": "11111",
                 }
          }).then((result) => {
             if(result.data.uid){

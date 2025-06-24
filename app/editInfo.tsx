@@ -4,12 +4,12 @@ import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
-    Button,
-    Checkbox,
-    HelperText,
-    Menu,
-    Text,
-    TextInput,
+  Button,
+  Checkbox,
+  HelperText,
+  Menu,
+  Text,
+  TextInput,
 } from "react-native-paper";
 import api, { getAPIToken } from "../services/api";
 
@@ -57,6 +57,7 @@ export default function EditInfo() {
         ...(Platform.OS !== 'web' && {
             'Content-Type': 'application/json',
         }),
+        "ngrok-skip-browser-warning": "11111",
         },
     })
     .then((response) => {

@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Platform } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
-import auth from "../../services/firebaseConfig";
 import api, { getAPIToken } from "../../services/api";
+import auth from "../../services/firebaseConfig";
 
 export default function EmailLoginPage() {
   const [email, setEmail] = useState("");
@@ -29,6 +29,7 @@ export default function EmailLoginPage() {
             ...(Platform.OS !== 'web' && {
                 'Content-Type': 'application/json',
             }),
+            "ngrok-skip-browser-warning": "11111",
         },
       })
       .then((response) => {

@@ -1,10 +1,7 @@
 import axios from "axios";
-import { Platform } from "react-native";
 
-const API_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8080" // Android emulator
-    : "http://localhost:8080/api"; 
+const API_URL = "https://allegedly-harmless-egret.ngrok-free.app/api/"; 
+// const API_URL = "http://192.168.1.100:8080/api/";
 
 let apiToken: any;
 
@@ -14,7 +11,7 @@ export function getAPIToken() {
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 120000,
 });
 
 //Login credentials
@@ -26,6 +23,7 @@ const credentials = {
 api.post(`/login`, credentials, {
   headers: {
     "Content-Type": "application/x-www-form-urlencoded",
+    "ngrok-skip-browser-warning": "11111",
   },
 }).then((response) => {
     apiToken = response.data;

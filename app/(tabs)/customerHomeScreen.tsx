@@ -7,11 +7,11 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
-  View,
-  Pressable
+  View
 } from "react-native";
 
 const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
@@ -98,6 +98,7 @@ export default function WeatherScreen() {
                 ...(Platform.OS !== 'web' && {
                 'Content-Type': 'application/json',
                 }),
+                "ngrok-skip-browser-warning": "11111",
               }
           }).then((result) => {
             setUserFirstName(result.data.firstName || 'User');

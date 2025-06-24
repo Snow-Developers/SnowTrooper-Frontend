@@ -96,6 +96,7 @@ export default function WeatherScreen() {
                 ...(Platform.OS !== 'web' && {
                 'Content-Type': 'application/json',
                 }),
+                "ngrok-skip-browser-warning": "11111",
               }
           }).then((result) => {
             setUserFirstName(result.data.firstName || 'User');
