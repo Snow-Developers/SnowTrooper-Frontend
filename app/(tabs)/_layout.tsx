@@ -1,9 +1,44 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Image, Platform, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import api, { getAPIToken } from "../../services/api";
 
 
 export default function TabLayout() {
+
+  const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
+  const [role, setRole] = useState("Customer");
+
+  console.log("current:", role);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user : any) => {
+        if(user){
+        api.get(`/users/${user.uid}`, {
+            headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== 'web' && {
+                'Content-Type': 'application/json',
+            }),
+            "ngrok-skip-browser-warning": "11111",
+            },
+        })
+        .then((response) => {
+            const data = response.data;
+            console.log("User profile data:", data);
+            setRole(data.role || ' ');
+
+        })
+        .catch((error) => {
+            console.error("Error fetching user profile!!:", error);
+        });
+      }
+        return () => unsubscribe();
+    }
+  )}, []);
+
+
   return (
     <Tabs
       screenOptions={{
@@ -20,6 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="homeScreen"
         options={{
+          href: role === "Contractor" ? undefined : null,
           tabBarIcon: ({ focused }) => (
             <View>
               <MaterialIcons name="home" size={35} color={focused ? "#FFFFFF" : "#212322"} />
@@ -28,17 +64,17 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="customerHomeScreen"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <View>
-              <MaterialIcons name="home" size={35} color={focused ? "#FFFFFF" : "#212322"} />
-            </View>
-          ),
-        }}
-      />
-      
+        <Tabs.Screen
+          name="customerHomeScreen"
+          options={{
+            href:role === "Customer" ? undefined : null,
+            tabBarIcon: ({ focused }) => (
+              <View>
+                <MaterialIcons name="home" size={35} color={focused ? "#FFFFFF" : "#212322"} />
+              </View>
+            ),
+          }}
+        />
       <Tabs.Screen
         name="ordersScreen"
         options={{

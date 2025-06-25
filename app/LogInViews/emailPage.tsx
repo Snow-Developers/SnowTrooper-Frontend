@@ -45,7 +45,7 @@ export default function EmailLoginPage() {
         }
       })
       .catch((error) => {
-        console.error("Error fetching user role:", error);
+        console.error("Error fetching user role:", error.response?.data || error.message);
       });
     } catch (error: any) {
       console.error("Login failed:", error);

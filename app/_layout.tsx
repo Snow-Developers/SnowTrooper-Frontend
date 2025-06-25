@@ -21,6 +21,7 @@ const customTheme = {
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname(); // current route path
+  const [role, setRole] = useState(" ");
 
   useEffect(() => {
       const unsubscribe = onAuthStateChanged(getAuth(), (user : any) => {
@@ -34,9 +35,13 @@ export default function RootLayout() {
                   "ngrok-skip-browser-warning": "11111",
                 }
          }).then((result) => {
+            setRole(result.data.role || ' ');
             if(result.data.uid){
               console.log("Path: ", pathname);
-              if(pathname === "/"){
+              console.log("User profile data role: ", result.data.role);
+              if(pathname === "/" && result.data.role === "Customer"){
+                router.replace("/(tabs)/customerHomeScreen");
+              }else if(pathname === "/" && result.data.role === "Contractor"){
                 router.replace("/(tabs)/homeScreen");
               }
               console.log("User is currently logged in: ", user);
@@ -56,12 +61,24 @@ export default function RootLayout() {
       });
       return unsubscribe;
   }, [pathname]);
-
+/*
   const appBarPath: { [key: string]: string } = {
     "/homeScreen": "Home",
     "/profileScreen": "Profile",
     "/ordersScreen": "Orders"
   };
+*/
+  const appBarPath: { [key: string]: string } = {};
+
+  if (role === "Contractor") {
+    appBarPath["/(tabs)/homeScreen"] = "Home";
+    appBarPath["/(tabs)/profileScreen"] = "Profile";
+    appBarPath["/(tabs)/ordersScreen"] = "Orders";
+  } else {
+    appBarPath["/customerHomeScreen"] = "Home";
+    appBarPath["/profileScreen"] = "Profile";
+    appBarPath["/ordersScreen"] = "Orders";
+  }
 
   return (
     <PaperProvider theme={customTheme}>
