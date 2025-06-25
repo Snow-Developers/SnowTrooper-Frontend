@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -120,8 +121,8 @@ export default function AvailableOrdersScreen() {
         orderStatus: "IN-PROGRESS",
       });
 
-      alert("Order claimed successfully!");
-      fetchOrders(); // refresh list
+      //   alert("Order claimed successfully!");
+      router.push({ pathname: "/contractorOrderProcess", params: { orderId } });
     } catch (error) {
       console.error("Error claiming order:", error);
       alert("Failed to claim order.");
