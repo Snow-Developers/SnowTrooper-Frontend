@@ -1,7 +1,15 @@
+import * as Location from "expo-location";
 import { useLocalSearchParams } from "expo-router";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 import { db } from "../services/firebaseConfig";
 
@@ -19,6 +27,16 @@ export default function ContractorOrderProcess() {
   const { orderId } = useLocalSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [nativeWatcher, setNativeWatcher] = useState<any>(null);
+  const [webWatchId, setWebWatchId] = useState<number | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
+
+  const user = getAuth().currentUser;
+  const driverId = user?.uid || "driver_123";
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -49,7 +67,100 @@ export default function ContractorOrderProcess() {
     };
 
     fetchOrder();
+    return () => stopTracking();
   }, [orderId]);
+
+  const updateLocationInFirestore = async (
+    locationData: Location.LocationObject
+  ) => {
+    try {
+      const locationRef = doc(db, "driverLocations", driverId);
+      await setDoc(locationRef, {
+        latitude: locationData.coords.latitude,
+        longitude: locationData.coords.longitude,
+        speed: locationData.coords.speed || 0,
+        accuracy: locationData.coords.accuracy,
+        heading: locationData.coords.heading || 0,
+        timestamp: serverTimestamp(),
+        isActive: true,
+      });
+    } catch (error: any) {
+      console.error("Error updating location in Firestore:", error);
+      setErrorMsg(`Failed to update location: ${error?.message || error}`);
+    }
+  };
+
+  const startTracking = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      setErrorMsg("Permission to access location was denied");
+      return;
+    }
+    setIsTracking(true);
+
+    if (Platform.OS === "web") {
+      const id = navigator.geolocation.watchPosition(
+        (pos) => {
+          const coords = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            speed: pos.coords.speed,
+            accuracy: pos.coords.accuracy,
+            heading: pos.coords.heading,
+          };
+          const locationObj = { coords } as Location.LocationObject;
+          setLocation(locationObj);
+          setErrorMsg(null);
+          updateLocationInFirestore(locationObj);
+        },
+        (err) => {
+          setErrorMsg(err.message);
+          setIsTracking(false);
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      );
+      setWebWatchId(id);
+    } else {
+      const watcher = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Highest,
+          timeInterval: 1000,
+          distanceInterval: 1,
+        },
+        (newLocation) => {
+          setLocation(newLocation);
+          setErrorMsg(null);
+          updateLocationInFirestore(newLocation);
+        }
+      );
+      setNativeWatcher(watcher);
+    }
+  };
+
+  const stopTracking = async () => {
+    if (Platform.OS === "web") {
+      if (webWatchId !== null) {
+        navigator.geolocation.clearWatch(webWatchId);
+        setWebWatchId(null);
+      }
+    } else {
+      if (nativeWatcher && typeof nativeWatcher.remove === "function") {
+        nativeWatcher.remove();
+        setNativeWatcher(null);
+      }
+    }
+    setIsTracking(false);
+    try {
+      const locationRef = doc(db, "driverLocations", driverId);
+      await setDoc(
+        locationRef,
+        { isActive: false, timestamp: serverTimestamp() },
+        { merge: true }
+      );
+    } catch (error: any) {
+      console.error("Error updating driver status:", error);
+    }
+  };
 
   if (loading || !order) {
     return (
@@ -75,6 +186,20 @@ export default function ContractorOrderProcess() {
         </Card.Content>
       </Card>
 
+      <Button mode="contained" onPress={startTracking} disabled={isTracking}>
+        {isTracking ? "Tracking Active..." : "Start Location Sharing"}
+      </Button>
+
+      {isTracking && (
+        <Button
+          mode="outlined"
+          onPress={stopTracking}
+          style={{ marginTop: 10 }}
+        >
+          Stop Location Sharing
+        </Button>
+      )}
+
       <Button
         mode="contained"
         onPress={async () => {
@@ -87,9 +212,24 @@ export default function ContractorOrderProcess() {
             alert("Failed to mark arrival.");
           }
         }}
+        style={{ marginTop: 20 }}
       >
-        I'm Here
+        I'm here, submit before photo
       </Button>
+
+      {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+
+      {location && (
+        <View style={styles.locationBox}>
+          <Text style={styles.locationTitle}>Current Location:</Text>
+          <Text>Latitude: {location.coords.latitude.toFixed(6)}</Text>
+          <Text>Longitude: {location.coords.longitude.toFixed(6)}</Text>
+          <Text>Accuracy: {location.coords.accuracy} meters</Text>
+          <Text style={styles.statusText}>
+            Status: {isTracking ? "🟢 Broadcasting to customers" : "🔴 Offline"}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -119,5 +259,27 @@ const styles = StyleSheet.create({
   info: {
     fontSize: 16,
     marginBottom: 5,
+  },
+  locationBox: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+  },
+  locationTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  errorText: {
+    marginTop: 20,
+    color: "red",
+    textAlign: "center",
+  },
+  statusText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
