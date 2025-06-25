@@ -9,16 +9,29 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View
 } from "react-native";
-
+import { Card } from "react-native-paper";
 const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
 
-
-
-
+type Order = {
+  orderId: string;
+  orderStatus: string;
+  orderPlacedTime: any;
+  orderFulfilledTime: any;
+  cleaningSpecifics: string[];
+  prefTime: string[];
+  contractorFName: string;
+  contractorLName: string;
+  contractorPhoneNumber: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zipCode: string;
+};
 
 export default function WeatherScreen() {
   type WeatherResponse = {
@@ -44,8 +57,41 @@ export default function WeatherScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
   useEffect(() => {
+    setOrdersLoading(true);
+    const unsubscribe = onAuthStateChanged(getAuth(), (user: any) => {
+      if (user) {
+        api.get(`/order/history/${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== 'web' && {
+              'Content-Type': 'application/json',
+            }),
+            "ngrok-skip-browser-warning": "11111",
+          },
+        })
+          .then((result) => {
+            setOrders(result.data || []);
+          })
+          .catch((error) => {
+            console.error("Error fetching orders:", error);
+            setOrders([]);
+          })
+          .finally(() => {
+            setOrdersLoading(false);
+          });
+      } else {
+        setOrders([]);
+        setOrdersLoading(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
+
+  const currentOrders = orders.filter((order) => order.orderStatus === "IN-PROGRESS" || order.orderStatus === "WAITING");
 
   const fetchWeather = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -125,6 +171,9 @@ export default function WeatherScreen() {
 
   return (
       <SafeAreaView style={styles.container}>
+        <ScrollView style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          >
         {/* Header */}
         {/* <ImageBackground source={require("../../assets/images/ST_White_Logo_Shield.png")} resizeMode="center" style={styles.image}>
         </ImageBackground> */}
@@ -170,12 +219,110 @@ export default function WeatherScreen() {
             <Text style={styles.footerText}>Failed to load weather data.</Text>
           )}
         </View>
-        <Pressable style={styles.createOrderButton} onPress={() => router.push('/customerOrderRequest')}>
+
+        {/* Current Orders Section */}
+        
+          <Pressable style={styles.createOrderButton} onPress={() => router.push('/customerOrderRequest')}>
             <Text style={styles.buttonText}>Create New Order</Text>
-        </Pressable>
+          </Pressable>
+          <Text style={styles.sectionTitle}>Current Orders</Text>
+          {ordersLoading ? (
+            <ActivityIndicator size="large" color="#4ac1d3" />
+          ) : currentOrders.length === 0 ? (
+            <Text style={styles.emptyText}>No current orders.</Text>
+          ) : (
+            currentOrders.map((order) => (
+              <OrderCard key={order.orderId} order={order} />
+            ))
+          )}
+        </ScrollView>
       </SafeAreaView>
   );
 };
+
+// Helper function for formatting timestamps
+function formatTimestamp(ts: any) {
+  if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number") return null;
+  const date = new Date(ts.seconds * 1000);
+  return date.toLocaleString();
+}
+
+
+function OrderCard({ order }: { order: Order }) {
+  const hasContractor = order.contractorFName && order.contractorLName && order.contractorPhoneNumber;
+  return (
+    <Card style={styles.card}>
+      <Card.Content>
+        <Text style={styles.cardTitle}>Order #{order.orderId}</Text>
+        <Text style={[styles.status, { color: getStatusColor(order.orderStatus) }]}>
+          Status: {order.orderStatus}
+        </Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Address:</Text>
+          <Text style={styles.value}>
+            {order.streetAddress}, {order.city}, {order.state} {order.zipCode}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Cleaning:</Text>
+          <Text style={styles.value}>{order.cleaningSpecifics.join(", ")}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Preferred Time:</Text>
+          <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+        </View>
+        {order.orderPlacedTime && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Placed:</Text>
+            <Text style={styles.value}>{formatTimestamp(order.orderPlacedTime)}</Text>
+          </View>
+        )}
+        {order.orderFulfilledTime && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Fulfilled:</Text>
+            <Text style={styles.value}>{formatTimestamp(order.orderFulfilledTime)}</Text>
+          </View>
+        )}
+        <View style={styles.contractorSection}>
+          <Text style={styles.contractorHeader}>Contractor Info:</Text>
+          {hasContractor ? (
+            <>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Name:</Text>
+                <Text style={styles.value}>
+                  {order.contractorFName} {order.contractorLName}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Phone:</Text>
+                <Text style={styles.value}>{order.contractorPhoneNumber}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.value}>No contractor has picked up the order yet.</Text>
+          )}
+        </View>
+      </Card.Content>
+    </Card>
+  );
+}
+
+// Status color mapping
+function getStatusColor(status: string): string {
+  switch (status.toUpperCase()) {
+    case "COMPLETED":
+      return "#2ecc71"; // green
+    case "IN-PROGRESS":
+      return "#f39c12"; // orange
+    case "WAITING":
+      return "#7f8c8d"; // gray
+    case "CANCELED":
+      return "#e74c3c"; // red
+    default:
+      return "#555"; // fallback
+  }
+}
+
 
 const styles = StyleSheet.create({
   container: { 
@@ -191,7 +338,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 5,
   },
-  cardTitle: { fontSize: 18, fontWeight: "bold" },
+  cardTitle: { 
+    fontSize: 18, fontWeight: "bold" 
+  },
   subText: { color: "#777", marginBottom: 10 },
   weatherRow: {
     flexDirection: "row",
@@ -235,4 +384,55 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     },
+    sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 56,
+    marginBottom: 8,
+    color: "#333",
+    alignSelf: "center",
+  },
+  emptyText: {
+    color: "#888",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  status: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#555",
+    flex: 1,
+  },
+  value: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#111",
+    textAlign: "right",
+    flex: 2,
+    marginLeft: 10,
+  },
+  contractorSection: {
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  contractorHeader: {
+    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 4,
+    color: "#333",
+  },
 });

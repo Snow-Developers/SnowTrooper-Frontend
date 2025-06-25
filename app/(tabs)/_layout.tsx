@@ -1,8 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Image, Platform, StyleSheet, View } from "react-native";
-import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { Image, Platform, StyleSheet, View } from "react-native";
 import api, { getAPIToken } from "../../services/api";
 
 
@@ -17,11 +17,11 @@ export default function TabLayout() {
         if(user){
         api.get(`/users/${user.uid}`, {
             headers: {
-            Authorization: `Bearer ${getAPIToken()}`,
-            ...(Platform.OS !== 'web' && {
-                'Content-Type': 'application/json',
-            }),
-            "ngrok-skip-browser-warning": "11111",
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== 'web' && {
+                  'Content-Type': 'application/json',
+              }),
+              "ngrok-skip-browser-warning": "11111",
             },
         })
         .then((response) => {
@@ -75,9 +75,31 @@ export default function TabLayout() {
             ),
           }}
         />
+
       <Tabs.Screen
-        name="ordersScreen"
+        name="customerOrdersScreen"
         options={{
+          href: role === "Customer" ? undefined : null,
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image 
+                source={require("../../assets/images/ST_White_Logo_Shield.png")}
+                style={{
+                  top:2.5,
+                  width: 35,
+                  height: 40,
+                  margin: 100,
+                  tintColor: focused ? "#FFFFFF" : "#212322",
+                }}/>
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="contractorOrdersScreen"
+        options={{
+          href: role === "Contractor" ? undefined : null,
           tabBarIcon: ({ focused }) => (
             <View>
               <Image 

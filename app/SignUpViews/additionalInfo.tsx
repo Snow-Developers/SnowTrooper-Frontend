@@ -373,15 +373,17 @@ export default function AdditionalInfo() {
       })
       .then(() => {
         console.log("Document uploaded sucessfully!");
-        router.replace("/(tabs)/homeScreen");
+        if(userRole === "Customer"){
+          router.replace("/(tabs)/customerHomeScreen");
+        }else{
+          router.replace("/(tabs)/homeScreen");
+        }
       })
       .catch((error) => {
         console.log("Response Data:", error);
       });
 
-      if(userRole === "Customer"){
-        router.replace("/(tabs)/customerHomeScreen");
-      }
+     
   };
 
   //Dynamically render necessary fields
