@@ -150,10 +150,7 @@ export default function EmailPage() {
           mode="contained"
           onPress={handleEmailSignUp}
           style={styles.signupButton}
-        >
-          {" "}
-          Sign Up{" "}
-        </Button>
+        >Sign Up</Button>
       </View>
     </View>
   );
