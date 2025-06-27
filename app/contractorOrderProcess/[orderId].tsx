@@ -11,7 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
-import { db } from "../services/firebaseConfig";
+import { db } from "../../services/firebaseConfig";
 
 interface Order {
   customerFName: string;

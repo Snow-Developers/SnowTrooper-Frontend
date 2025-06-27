@@ -12,6 +12,7 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, Card, Text } from "react-native-paper";
 import { db } from "../../services/firebaseConfig";
+import { router } from "expo-router";
 
 interface Order {
   id: string;
@@ -63,7 +64,6 @@ export default function OrdersScreen() {
 
     return () => unsubscribe();
   }, []);
-
 
   const fetchOrders = async () => {
     try {
@@ -120,6 +120,11 @@ export default function OrdersScreen() {
       });
 
       alert("Order claimed successfully!");
+      console.log(
+        "Navigating to contractorOrderProcess with orderId:",
+        orderId
+      );
+      router.push(`/contractorOrderProcess/${orderId}`);
       fetchOrders(); // refresh list
     } catch (error) {
       console.error("Error claiming order:", error);
@@ -138,7 +143,7 @@ export default function OrdersScreen() {
     );
   }
 
-   if (!isContractor) {
+  if (!isContractor) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.loadingText}>
@@ -149,8 +154,10 @@ export default function OrdersScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}
-    contentContainerStyle={{ paddingBottom: 100 }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 100 }}
+    >
       <Text style={styles.title}>Available Orders</Text>
       <Text style={styles.subtitle}>Tap to claim an open job</Text>
 
@@ -268,7 +275,7 @@ const styles = StyleSheet.create({
     color: "#111",
     textAlign: "right",
     flex: 1,
-     marginLeft: 10,
+    marginLeft: 10,
   },
   claimButton: {
     marginTop: 15,
@@ -278,4 +285,4 @@ const styles = StyleSheet.create({
     color: "#555",
     textAlign: "center",
   },
-  });
+});
