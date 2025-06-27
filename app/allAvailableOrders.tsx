@@ -101,14 +101,18 @@ export default function AvailableOrdersScreen() {
     }
 
     try {
+      console.log("Step 1: claiming orderId", orderId);
       setClaimingOrderId(orderId);
 
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
         alert("Your profile was not found in the database.");
+        console.log("Step 2: user not found");
         return;
       }
+
+      console.log("Step 2: user found");
 
       const contractorData = userSnap.data();
 
@@ -121,12 +125,17 @@ export default function AvailableOrdersScreen() {
         orderStatus: "IN-PROGRESS",
       });
 
-      //   alert("Order claimed successfully!");
-      router.push({ pathname: "/contractorOrderProcess", params: { orderId } });
+      console.log("Step 3: order updated");
+      console.log(
+        "Navigating to contractorOrderProcess with orderId:",
+        orderId
+      );
+      router.push(`/contractorOrderProcess/${orderId}`);
     } catch (error) {
       console.error("Error claiming order:", error);
       alert("Failed to claim order.");
     } finally {
+      console.log("Step 4: done");
       setClaimingOrderId(null);
     }
   };
