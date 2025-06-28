@@ -36,9 +36,9 @@ export default function EmailLoginPage() {
         const data = response.data;
         console.log("User role data:", data.role);
         if (data.role === "Customer") {
-          router.replace("/customerHomeScreen");
+          router.replace("/(tabs)/customerHomeScreen");
         } else if (data.role === "Contractor") {
-          router.replace("/homeScreen");
+          router.replace("/(tabs)/contractorHomeScreen");
         } else {
           console.error("Unknown user role:", data.role);
           alert("Unknown user role.");

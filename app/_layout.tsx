@@ -42,7 +42,7 @@ export default function RootLayout() {
               if(pathname === "/" && result.data.role === "Customer"){
                 router.replace("/(tabs)/customerHomeScreen");
               }else if(pathname === "/" && result.data.role === "Contractor"){
-                router.replace("/(tabs)/homeScreen");
+                router.replace("/(tabs)/contractorHomeScreen");
               }
               console.log("User is currently logged in: ", user);
               
@@ -71,12 +71,12 @@ export default function RootLayout() {
   const appBarPath: { [key: string]: string } = {};
 
   if (role === "Contractor") {
-    appBarPath["/(tabs)/homeScreen"] = "Home";
+    appBarPath["/(tabs)/contractorHomeScreen"] = "Home";
     appBarPath["/(tabs)/profileScreen"] = "Profile";
     appBarPath["/(tabs)/ordersScreen"] = "Orders";
   } else {
-    appBarPath["/customerHomeScreen"] = "Home";
-    appBarPath["/profileScreen"] = "Profile";
+    appBarPath["/(tabs)/customerHomeScreen"] = "Home";
+    appBarPath["/(tabs)/profileScreen"] = "Profile";
     appBarPath["/ordersScreen"] = "Orders";
   }
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_URL = "https://allegedly-harmless-egret.ngrok-free.app/api/"; 
-// const API_URL = "http://192.168.1.100:8080/api/";
+// const API_URL = "http://localhost:8082/api/";
 
 let apiToken: any;
 

@@ -53,7 +53,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="homeScreen"
+        name="contractorHomeScreen"
         options={{
           href: role === "Contractor" ? undefined : null,
           tabBarIcon: ({ focused }) => (
@@ -76,56 +76,56 @@ export default function TabLayout() {
           }}
         />
 
-      <Tabs.Screen
-        name="customerOrdersScreen"
-        options={{
-          href: role === "Customer" ? undefined : null,
-          tabBarIcon: ({ focused }) => (
-            <View>
-              <Image 
-                source={require("../../assets/images/ST_White_Logo_Shield.png")}
-                style={{
-                  top:2.5,
-                  width: 35,
-                  height: 40,
-                  margin: 100,
-                  tintColor: focused ? "#FFFFFF" : "#212322",
-                }}/>
-            </View>
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="customerOrdersScreen"
+          options={{
+            href: role === "Customer" ? undefined : null,
+            tabBarIcon: ({ focused }) => (
+              <View>
+                <Image 
+                  source={require("../../assets/images/ST_White_Logo_Shield.png")}
+                  style={{
+                    top:2.5,
+                    width: 35,
+                    height: 40,
+                    margin: 100,
+                    tintColor: focused ? "#FFFFFF" : "#212322",
+                  }}/>
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="contractorOrdersScreen"
-        options={{
-          href: role === "Contractor" ? undefined : null,
-          tabBarIcon: ({ focused }) => (
-            <View>
-              <Image 
-                source={require("../../assets/images/ST_White_Logo_Shield.png")}
-                style={{
-                  top:2.5,
-                  width: 35,
-                  height: 40,
-                  margin: 100,
-                  tintColor: focused ? "#FFFFFF" : "#212322",
-                }}/>
-            </View>
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="contractorOrdersScreen"
+          options={{
+            href: role === "Contractor" ? undefined : null,
+            tabBarIcon: ({ focused }) => (
+              <View>
+                <Image 
+                  source={require("../../assets/images/ST_White_Logo_Shield.png")}
+                  style={{
+                    top:2.5,
+                    width: 35,
+                    height: 40,
+                    margin: 100,
+                    tintColor: focused ? "#FFFFFF" : "#212322",
+                  }}/>
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="profileScreen"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <View>
-              <MaterialIcons name="person" size={35} color={focused ? "#FFFFFF" : "#212322"} />
-            </View>
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="profileScreen"
+          options={{
+            tabBarIcon: ({ focused }) => (
+              <View>
+                <MaterialIcons name="person" size={35} color={focused ? "#FFFFFF" : "#212322"} />
+              </View>
+            ),
+          }}
+        />
 
     </Tabs>
   );

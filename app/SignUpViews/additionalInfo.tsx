@@ -375,8 +375,8 @@ export default function AdditionalInfo() {
         console.log("Document uploaded sucessfully!");
         if(userRole === "Customer"){
           router.replace("/(tabs)/customerHomeScreen");
-        }else{
-          router.replace("/(tabs)/homeScreen");
+        }else if(userRole === "Contractor"){
+          router.replace("/(tabs)/contractorHomeScreen");
         }
       })
       .catch((error) => {
