@@ -1,8 +1,11 @@
 import api, { getAPIToken } from "@/services/api";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Card } from "react-native-paper";
+import DriverMap from "../../components/driverMap";
+import { db } from "../../services/firebaseConfig";
 
 type Order = {
     orderId: string;
@@ -14,15 +17,34 @@ type Order = {
     contractorFName: string;
     contractorLName: string;
     contractorPhoneNumber: string;
+    contractorUid: string; 
     streetAddress: string;
     city: string;
     state: string;
     zipCode: string;
 };
 
+interface DriverLocation {
+    latitude: number;
+    longitude: number;
+    speed: number;
+    accuracy: number;
+    heading: number;
+    timestamp: any;
+    isActive: boolean;
+}
+
 export default function CustomerOrdersScreen() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+    const [driverLocation, setDriverLocation] = useState<DriverLocation | null>(null);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<string>("");
+    const [isConnected, setIsConnected] = useState(false);
+    const [updateCount, setUpdateCount] = useState(0);
+    const [locationUnsubscribe, setLocationUnsubscribe] = useState<(() => void) | null>(null);
 
     useEffect(() => {
         setLoading(true);
@@ -53,7 +75,14 @@ export default function CustomerOrdersScreen() {
                 setLoading(false);
             }
         });
-        return () => unsubscribe();
+        
+        return () => {
+            unsubscribe();
+
+            if (locationUnsubscribe) {
+                locationUnsubscribe();
+            }
+        };
     }, []);
 
     const currentOrders = orders.filter(order => order.orderStatus === "IN-PROGRESS" || order.orderStatus === "WAITING");
@@ -67,7 +96,6 @@ export default function CustomerOrdersScreen() {
         );
     }
     
-
     return (
         <ScrollView style={styles.container}
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -77,7 +105,18 @@ export default function CustomerOrdersScreen() {
                 <Text style={styles.emptyText}>No current orders.</Text>
             ) : (
                 currentOrders.map(order => (
-                    <OrderCard key={order.orderId} order={order} />
+                    <OrderCard 
+                        key={order.orderId} 
+                        order={order} 
+                        onTrackLocation={(orderId) => handleTrackLocation(orderId)}
+                        isTracking={trackingOrderId === order.orderId}
+                        driverLocation={trackingOrderId === order.orderId ? driverLocation : null}
+                        locationLoading={trackingOrderId === order.orderId ? locationLoading : false}
+                        locationError={trackingOrderId === order.orderId ? locationError : null}
+                        lastUpdated={trackingOrderId === order.orderId ? lastUpdated : ""}
+                        isConnected={trackingOrderId === order.orderId ? isConnected : false}
+                        updateCount={trackingOrderId === order.orderId ? updateCount : 0}
+                    />
                 ))
             )}
 
@@ -86,33 +125,165 @@ export default function CustomerOrdersScreen() {
                 <Text style={styles.emptyText}>No past orders.</Text>
             ) : (
                 orderHistory.map(order => (
-                    <OrderCard key={order.orderId} order={order} />
+                    <OrderCard 
+                        key={order.orderId} 
+                        order={order} 
+                        onTrackLocation={() => {}}
+                        isTracking={false}
+                        driverLocation={null}
+                        locationLoading={false}
+                        locationError={null}
+                        lastUpdated=""
+                        isConnected={false}
+                        updateCount={0}
+                    />
                 ))
             )}
         </ScrollView>
     );
+
+    function handleTrackLocation(orderId: string) {
+        if (trackingOrderId === orderId) {
+            // Stop tracking + Clean up existing tracking
+            setTrackingOrderId(null);
+            setDriverLocation(null);
+            setLocationError(null);
+            setIsConnected(false);
+            setUpdateCount(0);
+            
+            if (locationUnsubscribe) {
+                locationUnsubscribe();
+                setLocationUnsubscribe(null);
+            }
+            return;
+        }
+
+        // Find the contractor
+        const order = orders.find(o => o.orderId === orderId);
+        if (!order || !order.contractorUid) {
+            setLocationError("No contractor assigned to this order");
+            return;
+        }
+
+        // Start
+        setTrackingOrderId(orderId);
+        setLocationLoading(true);
+        setLocationError(null);
+        setUpdateCount(0);
+
+        // Clean up any existing tracking before a new one starts
+        if (locationUnsubscribe) {
+            locationUnsubscribe();
+        }
+
+        // Call to start real-time tracking 
+        startRealtimeTracking(order.contractorUid);
+    }
+
+    function startRealtimeTracking(contractorUid: string) {
+        console.log(`Starting location tracking for contractor: ${contractorUid}`);
+        
+        const locationRef = doc(db, "driverLocations", contractorUid);
+        const unsubscribe = onSnapshot(
+            locationRef,
+            (docSnapshot) => {
+                setLocationLoading(false);
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data() as DriverLocation;
+                    console.log("Received location update:", data);
+                    
+                    setDriverLocation(data);
+                    setLastUpdated(new Date().toLocaleTimeString());
+                    setLocationError(null);
+                    setIsConnected(true);
+                    setUpdateCount((prev) => prev + 1);
+                } else {
+                    console.log("No location document found for contractor");
+                    setDriverLocation(null);
+                    setLocationError("Contractor location not available - they may not be sharing location");
+                    setIsConnected(false);
+                }
+            },
+            (err: any) => {
+                console.error("Location tracking error:", err);
+                setLocationError(`Failed to get contractor location: ${err?.message || err}`);
+                setLocationLoading(false);
+                setIsConnected(false);
+            }
+        );
+
+        // Store the unsubscribe function for clean up
+        setLocationUnsubscribe(() => unsubscribe);
+    }
 }
 
-
-//Helper function for formatting timestamps
+// Format timestamp
 function formatTimestamp(ts: any) {
     if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number") return null;
     const date = new Date(ts.seconds * 1000);
     return date.toLocaleString();
 }
 
+// Get driver status in driverLocations
+function getDriverStatus(driverLocation: DriverLocation | null) {
+    if (!driverLocation)
+        return { status: "Waiting for contractor...", color: "#999", icon: "⏳" };
+
+    if (!driverLocation.isActive) {
+        return { status: "Contractor Offline", color: "#ff4444", icon: "🔴" };
+    }
+
+    if (driverLocation.timestamp?.toDate) {
+        const now = new Date();
+        const locationTime = driverLocation.timestamp.toDate();
+        const timeDiff = (now.getTime() - locationTime.getTime()) / 1000;
+        if (timeDiff > 30) {
+            return { status: "Connection Issues", color: "#ff8800", icon: "⚠️" };
+        }
+    }
+
+    return { status: "Live Tracking Active", color: "#00cc44", icon: "🟢" };
+}
+
+function formatCoordinate(coord: number, type: "lat" | "lng") {
+    const direction =
+        type === "lat" ? (coord >= 0 ? "N" : "S") : coord >= 0 ? "E" : "W";
+    return `${Math.abs(coord).toFixed(6)}° ${direction}`;
+}
+
 // OrderCard component to display individual order details
-function OrderCard({ order }: { order: Order }) {
-    const hasContractor = order.contractorFName && order.contractorLName && order.contractorPhoneNumber;
+function OrderCard({ 
+    order, 
+    onTrackLocation, 
+    isTracking, 
+    driverLocation, 
+    locationLoading, 
+    locationError, 
+    lastUpdated, 
+    isConnected, 
+    updateCount 
+}: { 
+    order: Order;
+    onTrackLocation: (orderId: string) => void;
+    isTracking: boolean;
+    driverLocation: DriverLocation | null;
+    locationLoading: boolean;
+    locationError: string | null;
+    lastUpdated: string;
+    isConnected: boolean;
+    updateCount: number;
+}) {
+    const hasContractor = order.contractorFName && order.contractorLName && order.contractorPhoneNumber && order.contractorUid;
 
     const handleGetLocation = () => {
-        // You can replace this with navigation or a modal, etc.
-        alert(
-            hasContractor
-                ? `Get real-time location for contractor: ${order.contractorFName} ${order.contractorLName}`
-                : "No contractor assigned yet."
-        );
+        if (!hasContractor) {
+            alert("No contractor assigned yet.");
+            return;
+        }
+        onTrackLocation(order.orderId);
     };
+
+    const driverStatus = driverLocation ? getDriverStatus(driverLocation) : null;
 
     return (
         <Card style={styles.card}>
@@ -161,20 +332,153 @@ function OrderCard({ order }: { order: Order }) {
                                 <Text style={styles.label}>Phone:</Text>
                                 <Text style={styles.value}>{order.contractorPhoneNumber}</Text>
                             </View>
-                            {order.orderStatus === "IN-PROGRESS" && (<Button
-                                mode="contained"
-                                style={styles.locationButton}
-                                labelStyle={styles.locationButtonText}
-                                onPress={handleGetLocation}
-                            >
-                            Get Contractor Location
-                            </Button>)}
+                            {order.contractorUid && (
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.label}>Contractor ID:</Text>
+                                    <Text style={[styles.value, styles.contractorId]}>
+                                        {order.contractorUid.substring(0, 8)}...
+                                    </Text>
+                                </View>
+                            )}
+                            {order.orderStatus === "IN-PROGRESS" && (
+                                <Button
+                                    mode="contained"
+                                    style={[
+                                        styles.locationButton,
+                                        isTracking && { backgroundColor: "#dc3545" }
+                                    ]}
+                                    labelStyle={styles.locationButtonText}
+                                    onPress={handleGetLocation}
+                                    loading={locationLoading}
+                                >
+                                    {isTracking ? "Stop Tracking" : "Track This Contractor"}
+                                </Button>
+                            )}
                         </>
-                        
                     ) : (
                         <Text style={styles.value}>No contractor has picked up the order yet.</Text>
                     )}
                 </View>
+
+                {/* Location Tracking */}
+                {isTracking && (
+                    <View style={styles.trackingSection}>
+                        <Text style={styles.trackingHeader}>
+                            📍 Tracking: {order.contractorFName} {order.contractorLName}
+                        </Text>
+                        
+                        {/* Status */}
+                        <Card style={[
+                            styles.statusCard,
+                            { backgroundColor: isConnected ? "#e8f5e8" : "#fff3e0" }
+                        ]}>
+                            <Card.Content>
+                                <View style={styles.statusRow}>
+                                    <Text style={styles.statusIcon}>
+                                        {driverStatus?.icon || "⏳"}
+                                    </Text>
+                                    <View style={styles.statusTextContainer}>
+                                        <Text style={[
+                                            styles.statusText, 
+                                            { color: driverStatus?.color || "#999" }
+                                        ]}>
+                                            {driverStatus?.status || "Connecting..."}
+                                        </Text>
+                                        <Text style={styles.lastUpdated}>
+                                            Last update: {lastUpdated} | Updates: {updateCount}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Card.Content>
+                        </Card>
+
+                        {/* Error Display */}
+                        {locationError && (
+                            <Card style={styles.errorCard}>
+                                <Card.Content>
+                                    <Text style={styles.errorText}>⚠️ {locationError}</Text>
+                                    <Button
+                                        mode="outlined"
+                                        onPress={() => handleGetLocation()}
+                                        style={styles.retryButton}
+                                        labelStyle={styles.retryButtonText}
+                                        loading={locationLoading}
+                                    >
+                                        Retry Connection
+                                    </Button>
+                                </Card.Content>
+                            </Card>
+                        )}
+
+                        {/* Map and Location Details */}
+                        {driverLocation && (
+                            <>
+                                {/* Map */}
+                                <Card style={styles.mapCard}>
+                                    <Card.Content>
+                                        <Text style={styles.mapTitle}>🗺️ Live Map View</Text>
+                                        <DriverMap
+                                            latitude={driverLocation.latitude}
+                                            longitude={driverLocation.longitude}
+                                            speed={driverLocation.speed}
+                                        />
+                                    </Card.Content>
+                                </Card>
+
+                                {/* Location Details */}
+                                <Card style={styles.positionCard}>
+                                    <Card.Content>
+                                        <Text style={styles.positionTitle}>📍 Current Position</Text>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>Latitude:</Text>
+                                            <Text style={styles.value}>
+                                                {formatCoordinate(driverLocation.latitude, "lat")}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>Longitude:</Text>
+                                            <Text style={styles.value}>
+                                                {formatCoordinate(driverLocation.longitude, "lng")}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>Speed:</Text>
+                                            <Text style={styles.value}>
+                                                {(driverLocation.speed * 2.237).toFixed(1)} mph
+                                            </Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>Accuracy:</Text>
+                                            <Text style={styles.value}>
+                                                ±{driverLocation.accuracy.toFixed(0)}m
+                                            </Text>
+                                        </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.label}>Coordinates:</Text>
+                                            <Text style={styles.coordValue}>
+                                                {driverLocation.latitude.toFixed(6)}, {driverLocation.longitude.toFixed(6)}
+                                            </Text>
+                                        </View>
+                                    </Card.Content>
+                                </Card>
+                            </>
+                        )}
+
+                        {/* Loading State */}
+                        {locationLoading && (
+                            <Card style={styles.loadingCard}>
+                                <Card.Content>
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="small" color="#2196F3" />
+                                        <Text style={styles.loadingText}>
+                                            Connecting to {order.contractorFName}...
+                                        </Text>
+                                    </View>
+                                </Card.Content>
+                            </Card>
+                        )}
+                    </View>
+                )}
             </Card.Content>
         </Card>
     );
@@ -240,6 +544,20 @@ const styles = StyleSheet.create({
         flex: 2,
         marginLeft: 10,
     },
+    coordValue: {
+        fontSize: 12,
+        color: "#111",
+        fontWeight: "bold",
+        flex: 2,
+        textAlign: "right",
+        marginLeft: 10,
+        fontFamily: "monospace",
+    },
+    contractorId: {
+        fontSize: 12,
+        color: "#666",
+        fontFamily: "monospace",
+    },
     text: {
         fontSize: 14,
         color: "#555",
@@ -271,5 +589,102 @@ const styles = StyleSheet.create({
     locationButtonText: {
         color: "#fff",
         fontWeight: "bold",
+    },
+    // For the tracking faeture
+    trackingSection: {
+        marginTop: 15,
+        paddingTop: 12,
+        borderTopWidth: 2,
+        borderTopColor: "#00c1de",
+    },
+    trackingHeader: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+        color: "#333",
+    },
+    statusCard: {
+        marginBottom: 10,
+        elevation: 2,
+        borderRadius: 6,
+    },
+    statusRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    statusIcon: {
+        fontSize: 20,
+        marginRight: 12,
+    },
+    statusTextContainer: {
+        flex: 1,
+    },
+    statusText: {
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    lastUpdated: {
+        color: "#666",
+        fontSize: 11,
+        marginTop: 2,
+    },
+    errorCard: {
+        marginBottom: 10,
+        backgroundColor: "#ffebee",
+        borderColor: "#f44336",
+        borderWidth: 1,
+        elevation: 2,
+        borderRadius: 6,
+    },
+    errorText: {
+        color: "#d32f2f",
+        textAlign: "center",
+        fontSize: 14,
+    },
+    mapCard: {
+        marginBottom: 10,
+        elevation: 2,
+        borderRadius: 6,
+    },
+    mapTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+        color: "#333",
+    },
+    positionCard: {
+        marginBottom: 10,
+        elevation: 2,
+        borderRadius: 6,
+    },
+    positionTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+        color: "#333",
+    },
+    loadingCard: {
+        marginBottom: 10,
+        backgroundColor: "#f5f5f5",
+        elevation: 2,
+        borderRadius: 6,
+    },
+    loadingContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 10,
+    },
+    loadingText: {
+        marginLeft: 10,
+        fontSize: 14,
+        color: "#666",
+    },
+    retryButton: {
+        marginTop: 10,
+        borderColor: "#f44336",
+    },
+    retryButtonText: {
+        color: "#f44336",
     },
 });
