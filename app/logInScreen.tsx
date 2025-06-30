@@ -372,6 +372,7 @@ export default function LoginScreen() {
         mode="contained"
         onPress={handleFacebookLogIn}
         style={styles.socialButton}
+        testID="facebook-login-button"
       >
         Log in with Facebook
       </Button>
@@ -381,6 +382,7 @@ export default function LoginScreen() {
         mode="contained"
         onPress={handleGoogleLogin}
         style={styles.socialButton}
+        testID="google-login-button"
       >
         Log in with Google
       </Button>
@@ -390,6 +392,7 @@ export default function LoginScreen() {
         mode="contained"
         onPress={handleEmailLogin}
         style={styles.socialButton}
+        testID="email-login-button"
       >
         Log in with Email
       </Button>

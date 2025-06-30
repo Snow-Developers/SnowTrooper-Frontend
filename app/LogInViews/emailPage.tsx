@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { Platform, ScrollView, StyleSheet } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import api, { getAPIToken } from "../../services/api";
 import auth from "../../services/firebaseConfig";
@@ -22,7 +22,7 @@ export default function EmailLoginPage() {
         uid: user.uid,
         email: user.email,
       });
-      alert("Login Successful");
+      Alert.alert("Login Successful");
       api.get(`/users/${user.uid}`, {
         headers: {
             Authorization: `Bearer ${getAPIToken()}`,
@@ -55,9 +55,7 @@ export default function EmailLoginPage() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text variant="headlineMedium" style={styles.title}>
-        Log In
-      </Text>
+      <Text variant="headlineMedium" style={styles.title}>Login with Email</Text>
 
       <TextInput
         mode="outlined"
@@ -84,9 +82,7 @@ export default function EmailLoginPage() {
         mode="contained"
         onPress={handleEmailLogin}
         style={styles.socialButton}
-      >
-        Log In
-      </Button>
+      >Log In</Button>
     </ScrollView>
   );
 }

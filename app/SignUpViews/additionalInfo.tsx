@@ -2,7 +2,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   Checkbox,
@@ -11,6 +11,7 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useSignUpContext } from "../../context/SignUpContext";
 import api, { getAPIToken } from "../../services/api";
 
@@ -298,7 +299,7 @@ export default function AdditionalInfo() {
     //Alert user of fields missing proper values
     const missingFields = fieldKeys.filter(validateField);
     if (missingFields.length > 0) {
-      alert(`Please fill in the following required fields`);
+      Alert.alert(`Please fill in the following required fields`);
       return;
     }
 
@@ -400,6 +401,7 @@ export default function AdditionalInfo() {
       <View style={styles.inputContainer}>
         <TextInput
           mode="outlined"
+          testID={`${label.toLowerCase()}`}
           label={`${label} *`}
           placeholder={`Enter your ${label.toLowerCase()}`}
           value={value}
@@ -453,365 +455,367 @@ export default function AdditionalInfo() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.info}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Additional Information
-        </Text>
-        <View style={styles.infoTextBox}>
-          {renderField("firstName", "First Name", firstName, setFirstName)}
-          {renderField("lastName", "Last Name", lastName, setLastName)}
-          {renderField("email", "Email", email, setEmail)}
-          {renderField(
-            "phoneNumber",
-            "Phone Number",
-            phoneNumber,
-            setPhoneNumber
+    <SafeAreaProvider>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.info}>
+          <Text variant="headlineMedium" style={styles.title}>
+            Additional Information
+          </Text>
+          <View style={styles.infoTextBox}>
+            {renderField("firstName", "First Name", firstName, setFirstName)}
+            {renderField("lastName", "Last Name", lastName, setLastName)}
+            {renderField("email", "Email", email, setEmail)}
+            {renderField(
+              "phoneNumber",
+              "Phone Number",
+              phoneNumber,
+              setPhoneNumber
+            )}
+            <Text variant="headlineSmall">Address</Text>
+            {renderField(
+              "streetAddress",
+              "Street Address",
+              streetAddress,
+              setStreetAddress
+            )}
+            {renderField("city", "City", city, setCity)}
+            {renderField("state", "State", state, setState, styles.stateInput)}
+            {renderField(
+              "zipCode",
+              "Zip Code",
+              zipCode,
+              setZipCode,
+              styles.zipInput
+            )}
+            {renderRoleSelector()}
+          </View>
+
+          {/* Documentation section */}
+          {userRole === "Contractor" && (
+            <Text variant="headlineMedium">Upload required documents</Text>
           )}
-          <Text variant="headlineSmall">Address</Text>
-          {renderField(
-            "streetAddress",
-            "Street Address",
-            streetAddress,
-            setStreetAddress
+          {userRole === "Contractor" &&
+            (
+              Object.entries(DOCUMENT_SECTIONS) as [DocumentSectionKey, string][]
+            ).map(([key, label]) => (
+              <DocumentUploadSection key={key} sectionKey={key} title={label} />
+            ))}
+
+          <Text variant="headlineMedium">Preferences</Text>
+
+          {/*Customer Preferences View */}
+          {userRole === "Customer" && (
+            <>
+              <Text variant="headlineMedium" style={styles.promptText}>
+                Select Your Property Size
+              </Text>
+              <View
+                style={{
+                  paddingTop: 5,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <Menu
+                  visible={propertyVisible}
+                  onDismiss={closePropertyMenu}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={openPropertyMenu}
+                      style={[
+                        showErrors &&
+                          validateField("customerPropertySize") && {
+                            borderColor: "red",
+                          },
+                      ]}
+                    >
+                      {customerPropertySize || "Select Property Size"}
+                    </Button>
+                  }
+                >
+                  <Menu.Item
+                    onPress={() => handlePropertySelect("Tiny")}
+                    title="Tiny (0-500 sq ft)"
+                  />
+                  <Menu.Item
+                    onPress={() => handlePropertySelect("Small")}
+                    title="Small (501-1,501 sq ft)"
+                  />
+                  <Menu.Item
+                    onPress={() => handlePropertySelect("Medium")}
+                    title="Medium (1,501-3,000 sq ft)"
+                  />
+                  <Menu.Item
+                    onPress={() => handlePropertySelect("Large")}
+                    title="Large (3,001-6,000 sq ft)"
+                  />
+                  <Menu.Item
+                    onPress={() => handlePropertySelect("Extra Large")}
+                    title="Extra Large (6,001+ sq ft)"
+                  />
+                </Menu>
+              </View>
+              {showErrors && validateField("customerPropertySize") && (
+                <HelperText type="error">Property size is required</HelperText>
+              )}
+
+              <Text variant="headlineMedium" style={styles.promptText}>
+                Select Cleaning Specifics
+              </Text>
+              {cleaningSpecificsOptions.map((item) => (
+                <Checkbox.Item
+                  key={item}
+                  label={item}
+                  status={
+                    selectedCleaningSpecifics.includes(item)
+                      ? "checked"
+                      : "unchecked"
+                  }
+                  onPress={() => toggleCleaningSpecifics(item)}
+                />
+              ))}
+
+              <Text variant="headlineMedium" style={styles.promptText}>
+                Select Your Preferred Time
+              </Text>
+              {showErrors && validateField("selectedPrefTime") && (
+                <HelperText type="error">
+                  Select at least one preferred time
+                </HelperText>
+              )}
+              {prefTimeOptions.map((item) => (
+                <Checkbox.Item
+                  key={item.key}
+                  label={item.label}
+                  status={
+                    selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
+                  }
+                  onPress={() => togglePrefTime(item.key)}
+                />
+              ))}
+
+              <Text variant="headlineMedium" style={styles.promptText}>
+                Does your property have steps?
+              </Text>
+              <View style={styles.prompts}>
+                <Button
+                  mode="outlined"
+                  onPress={() => setHasSteps(true)}
+                  style={[
+                    styles.infoButton,
+                    hasSteps === true && styles.selectedButton,
+                  ]}
+                  labelStyle={[
+                    styles.buttonLabel,
+                    hasSteps === true && styles.selectedButtonLabel,
+                  ]}
+                >
+                  {" "}
+                  Yes{" "}
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  onPress={() => setHasSteps(false)}
+                  style={[
+                    styles.infoButton,
+                    hasSteps === false && styles.selectedButton,
+                  ]}
+                  labelStyle={[
+                    styles.buttonLabel,
+                    hasSteps === false && styles.selectedButtonLabel,
+                  ]}
+                >
+                  {" "}
+                  No{" "}
+                </Button>
+              </View>
+
+              <Text variant="headlineMedium" style={styles.promptText}>
+                Would you like pet friendly materials used?
+              </Text>
+              <View style={styles.prompts}>
+                <Button
+                  mode="outlined"
+                  onPress={() => setIsPetFriendly(true)}
+                  style={[
+                    styles.infoButton,
+                    isPetFriendly === true && styles.selectedButton,
+                  ]}
+                  labelStyle={[
+                    styles.buttonLabel,
+                    isPetFriendly === true && styles.selectedButtonLabel,
+                  ]}
+                >
+                  {" "}
+                  Yes{" "}
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  onPress={() => setIsPetFriendly(false)}
+                  style={[
+                    styles.infoButton,
+                    isPetFriendly === false && styles.selectedButton,
+                  ]}
+                  labelStyle={[
+                    styles.buttonLabel,
+                    isPetFriendly === false && styles.selectedButtonLabel,
+                  ]}
+                >
+                  {" "}
+                  No{" "}
+                </Button>
+              </View>
+            </>
           )}
-          {renderField("city", "City", city, setCity)}
-          {renderField("state", "State", state, setState, styles.stateInput)}
-          {renderField(
-            "zipCode",
-            "Zip Code",
-            zipCode,
-            setZipCode,
-            styles.zipInput
+
+          {/*Contrator Preferences View */}
+          {userRole === "Contractor" && (
+            <>
+              <Text variant="headlineSmall">Crew Size</Text>
+              <View
+                style={{
+                  paddingTop: 5,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <Menu
+                  visible={crewVisible}
+                  onDismiss={closeCrewMenu}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={openCrewMenu}
+                      style={[
+                        showErrors &&
+                          validateField("crewSize") && { borderColor: "red" },
+                      ]}
+                    >
+                      {crewSize || "Select Crew Size"}
+                    </Button>
+                  }
+                >
+                  <Menu.Item
+                    onPress={() => handleCrewSelect("Tiny")}
+                    title="Tiny (1-2 member(s))"
+                  />
+                  <Menu.Item
+                    onPress={() => handleCrewSelect("Small")}
+                    title="Small (3-5 members)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleCrewSelect("Medium")}
+                    title="Medium (6-9 members)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleCrewSelect("Large")}
+                    title="Large (10-13 members)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleCrewSelect("Extra Large")}
+                    title="Extra Large (14+ members)"
+                  />
+                </Menu>
+              </View>
+
+              <Text variant="headlineSmall">Size of Properties to Work on</Text>
+              {showErrors && validateField("selectedPropertySizes") && (
+                <HelperText type="error">
+                  Select at least one preferred property size to work on
+                </HelperText>
+              )}
+              {propertySizeOptions.map((item) => (
+                <Checkbox.Item
+                  key={item}
+                  label={item}
+                  status={
+                    selectedPropertySizes.includes(item) ? "checked" : "unchecked"
+                  }
+                  onPress={() => togglePropertySizes(item)}
+                />
+              ))}
+
+              <Text variant="headlineSmall">Preferred Radius to work</Text>
+              <View
+                style={{
+                  paddingTop: 5,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <Menu
+                  visible={radiusVisible}
+                  onDismiss={closeRadiusMenu}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={openRadiusMenu}
+                      style={[
+                        showErrors &&
+                          validateField("radiusSize") && { borderColor: "red" },
+                      ]}
+                    >
+                      {radiusSize || "Select Radius"}
+                    </Button>
+                  }
+                >
+                  <Menu.Item
+                    onPress={() => handleRadiusSelect("Tiny")}
+                    title="Tiny (1 mi.)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleRadiusSelect("Small")}
+                    title="Small (5 mi.)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleRadiusSelect("Medium")}
+                    title="Medium (10 mi.)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleRadiusSelect("Large")}
+                    title="Large (25 mi.)"
+                  />
+                  <Menu.Item
+                    onPress={() => handleRadiusSelect("Extra Large")}
+                    title="Extra Large (50 mi.)"
+                  />
+                </Menu>
+              </View>
+
+              <Text variant="headlineSmall">Type of Equipment</Text>
+              {showErrors && validateField("selectedEquipmentItems") && (
+                <HelperText type="error">
+                  Select at least one equipment
+                </HelperText>
+              )}
+              {snowEquipmentOptions.map((item) => (
+                <Checkbox.Item
+                  key={item}
+                  label={item}
+                  status={
+                    selectedEquipmentItems.includes(item)
+                      ? "checked"
+                      : "unchecked"
+                  }
+                  onPress={() => toggleEquipmentItem(item)}
+                />
+              ))}
+            </>
           )}
-          {renderRoleSelector()}
+
+          <Button
+            mode="contained"
+            onPress={handleContractorPref}
+            style={styles.signupButton}
+          >
+            Submit
+          </Button>
         </View>
-
-        {/* Documentation section */}
-        {userRole === "Contractor" && (
-          <Text variant="headlineMedium">Upload required documents</Text>
-        )}
-        {userRole === "Contractor" &&
-          (
-            Object.entries(DOCUMENT_SECTIONS) as [DocumentSectionKey, string][]
-          ).map(([key, label]) => (
-            <DocumentUploadSection key={key} sectionKey={key} title={label} />
-          ))}
-
-        <Text variant="headlineMedium">Preferences</Text>
-
-        {/*Customer Preferences View */}
-        {userRole === "Customer" && (
-          <>
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Your Property Size
-            </Text>
-            <View
-              style={{
-                paddingTop: 5,
-                flexDirection: "row",
-                justifyContent: "center",
-              }}
-            >
-              <Menu
-                visible={propertyVisible}
-                onDismiss={closePropertyMenu}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={openPropertyMenu}
-                    style={[
-                      showErrors &&
-                        validateField("customerPropertySize") && {
-                          borderColor: "red",
-                        },
-                    ]}
-                  >
-                    {customerPropertySize || "Select Property Size"}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Tiny")}
-                  title="Tiny (0-500 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Small")}
-                  title="Small (501-1,501 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Medium")}
-                  title="Medium (1,501-3,000 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Large")}
-                  title="Large (3,001-6,000 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Extra Large")}
-                  title="Extra Large (6,001+ sq ft)"
-                />
-              </Menu>
-            </View>
-            {showErrors && validateField("customerPropertySize") && (
-              <HelperText type="error">Property size is required</HelperText>
-            )}
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Cleaning Specifics
-            </Text>
-            {cleaningSpecificsOptions.map((item) => (
-              <Checkbox.Item
-                key={item}
-                label={item}
-                status={
-                  selectedCleaningSpecifics.includes(item)
-                    ? "checked"
-                    : "unchecked"
-                }
-                onPress={() => toggleCleaningSpecifics(item)}
-              />
-            ))}
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Your Preferred Time
-            </Text>
-            {showErrors && validateField("selectedPrefTime") && (
-              <HelperText type="error">
-                Select at least one preferred time
-              </HelperText>
-            )}
-            {prefTimeOptions.map((item) => (
-              <Checkbox.Item
-                key={item.key}
-                label={item.label}
-                status={
-                  selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
-                }
-                onPress={() => togglePrefTime(item.key)}
-              />
-            ))}
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Does your property have steps?
-            </Text>
-            <View style={styles.prompts}>
-              <Button
-                mode="outlined"
-                onPress={() => setHasSteps(true)}
-                style={[
-                  styles.infoButton,
-                  hasSteps === true && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  hasSteps === true && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                Yes{" "}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => setHasSteps(false)}
-                style={[
-                  styles.infoButton,
-                  hasSteps === false && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  hasSteps === false && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                No{" "}
-              </Button>
-            </View>
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Would you like pet friendly materials used?
-            </Text>
-            <View style={styles.prompts}>
-              <Button
-                mode="outlined"
-                onPress={() => setIsPetFriendly(true)}
-                style={[
-                  styles.infoButton,
-                  isPetFriendly === true && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  isPetFriendly === true && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                Yes{" "}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => setIsPetFriendly(false)}
-                style={[
-                  styles.infoButton,
-                  isPetFriendly === false && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  isPetFriendly === false && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                No{" "}
-              </Button>
-            </View>
-          </>
-        )}
-
-        {/*Contrator Preferences View */}
-        {userRole === "Contractor" && (
-          <>
-            <Text variant="headlineSmall">Crew Size</Text>
-            <View
-              style={{
-                paddingTop: 5,
-                flexDirection: "row",
-                justifyContent: "center",
-              }}
-            >
-              <Menu
-                visible={crewVisible}
-                onDismiss={closeCrewMenu}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={openCrewMenu}
-                    style={[
-                      showErrors &&
-                        validateField("crewSize") && { borderColor: "red" },
-                    ]}
-                  >
-                    {crewSize || "Select Crew Size"}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => handleCrewSelect("Tiny")}
-                  title="Tiny (1-2 member(s))"
-                />
-                <Menu.Item
-                  onPress={() => handleCrewSelect("Small")}
-                  title="Small (3-5 members)"
-                />
-                <Menu.Item
-                  onPress={() => handleCrewSelect("Medium")}
-                  title="Medium (6-9 members)"
-                />
-                <Menu.Item
-                  onPress={() => handleCrewSelect("Large")}
-                  title="Large (10-13 members)"
-                />
-                <Menu.Item
-                  onPress={() => handleCrewSelect("Extra Large")}
-                  title="Extra Large (14+ members)"
-                />
-              </Menu>
-            </View>
-
-            <Text variant="headlineSmall">Size of Properties to Work on</Text>
-            {showErrors && validateField("selectedPropertySizes") && (
-              <HelperText type="error">
-                Select at least one preferred property size to work on
-              </HelperText>
-            )}
-            {propertySizeOptions.map((item) => (
-              <Checkbox.Item
-                key={item}
-                label={item}
-                status={
-                  selectedPropertySizes.includes(item) ? "checked" : "unchecked"
-                }
-                onPress={() => togglePropertySizes(item)}
-              />
-            ))}
-
-            <Text variant="headlineSmall">Preferred Radius to work</Text>
-            <View
-              style={{
-                paddingTop: 5,
-                flexDirection: "row",
-                justifyContent: "center",
-              }}
-            >
-              <Menu
-                visible={radiusVisible}
-                onDismiss={closeRadiusMenu}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={openRadiusMenu}
-                    style={[
-                      showErrors &&
-                        validateField("radiusSize") && { borderColor: "red" },
-                    ]}
-                  >
-                    {radiusSize || "Select Radius"}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => handleRadiusSelect("Tiny")}
-                  title="Tiny (1 mi.)"
-                />
-                <Menu.Item
-                  onPress={() => handleRadiusSelect("Small")}
-                  title="Small (5 mi.)"
-                />
-                <Menu.Item
-                  onPress={() => handleRadiusSelect("Medium")}
-                  title="Medium (10 mi.)"
-                />
-                <Menu.Item
-                  onPress={() => handleRadiusSelect("Large")}
-                  title="Large (25 mi.)"
-                />
-                <Menu.Item
-                  onPress={() => handleRadiusSelect("Extra Large")}
-                  title="Extra Large (50 mi.)"
-                />
-              </Menu>
-            </View>
-
-            <Text variant="headlineSmall">Type of Equipment</Text>
-            {showErrors && validateField("selectedEquipmentItems") && (
-              <HelperText type="error">
-                Select at least one equipment
-              </HelperText>
-            )}
-            {snowEquipmentOptions.map((item) => (
-              <Checkbox.Item
-                key={item}
-                label={item}
-                status={
-                  selectedEquipmentItems.includes(item)
-                    ? "checked"
-                    : "unchecked"
-                }
-                onPress={() => toggleEquipmentItem(item)}
-              />
-            ))}
-          </>
-        )}
-
-        <Button
-          mode="contained"
-          onPress={handleContractorPref}
-          style={styles.signupButton}
-        >
-          Submit
-        </Button>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaProvider>
   );
 }
 

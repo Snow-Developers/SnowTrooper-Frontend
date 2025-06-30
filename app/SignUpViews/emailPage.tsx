@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import { useSignUpContext } from "../../context/SignUpContext";
 import auth from "../../services/firebaseConfig";
@@ -21,12 +21,12 @@ export default function EmailPage() {
     if (password.length >= 6) {
       if (password !== confirmPassword) {
         console.error("Passwords do not match");
-        alert("Passwords do not match");
+        Alert.alert("Passwords do not match");
         return;
       }
     } else {
       console.error("Password needs to be at least 6 characters long");
-      alert("Password needs to be at least 6 characters long");
+      Alert.alert("Password needs to be at least 6 characters long");
       return;
     }
 
@@ -49,7 +49,7 @@ export default function EmailPage() {
       })
       .catch((error) => {
         console.error("Error signing up:", error);
-        alert("Sign Up Failed: " + error.message);
+        Alert.alert("Sign Up Failed: " + error.message);
       });
   };
 
@@ -109,42 +109,6 @@ export default function EmailPage() {
           onChangeText={(text) => setConfirmPassword(text)}
           secureTextEntry
         />
-
-        {/* <Text variant="headlineMedium" style={styles.rolesText}>
-          Select your role
-        </Text>
-
-        <View style={styles.roles}>
-          <Button
-            mode="outlined"
-            onPress={() => setUserRole("Customer")}
-            style={[
-              styles.roleButton,
-              userRole === "Customer" && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              userRole === "Customer" && styles.selectedButtonLabel,
-            ]}
-          >
-            Customer
-          </Button>
-
-          <Button
-            mode="outlined"
-            onPress={() => setUserRole("Contractor")}
-            style={[
-              styles.roleButton,
-              userRole === "Contractor" && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              userRole === "Contractor" && styles.selectedButtonLabel,
-            ]}
-          >
-            Contractor
-          </Button>
-        </View> */}
 
         <Button
           mode="contained"

@@ -11,6 +11,7 @@ import {
 } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -240,13 +241,13 @@ export default function SignUpScreen() {
         const errorMessage = error.message;
 
         if (errorCode === "auth/account-exists-with-different-credential") {
-          alert(
+          Alert.alert(
             "An account with this email already exists with a different sign-in method."
           );
         } else if (errorCode === "auth/popup-closed-by-user") {
-          alert("Sign-in was cancelled.");
+          Alert.alert("Sign-in was cancelled.");
         } else {
-          alert(`Error during Facebook sign-in: ${errorMessage}`);
+          Alert.alert(`Error during Facebook sign-in: ${errorMessage}`);
         }
       }
     } else {
@@ -280,7 +281,7 @@ export default function SignUpScreen() {
 
         if (result.isCancelled) {
           console.log("Facebook login was cancelled");
-          alert("Facebook login was cancelled");
+          Alert.alert("Facebook login was cancelled");
           return;
         }
 
@@ -360,7 +361,7 @@ export default function SignUpScreen() {
         new GraphRequestManager().addRequest(profileRequest).start();
         //End
 
-        alert("Successfully signed in with Facebook!");
+        Alert.alert("Successfully signed in with Facebook!");
 
         // Navigate to next screen or update UI
         router.replace("/SignUpViews/additionalInfo");
@@ -369,23 +370,23 @@ export default function SignUpScreen() {
 
         // More detailed error handling
         if (error.message?.includes("Cannot resolve module")) {
-          alert(
+          Alert.alert(
             "Facebook SDK not properly configured for mobile. Please check your setup."
           );
         } else if (error.message?.includes("Network")) {
-          alert(
+          Alert.alert(
             "Network error during Facebook sign-in. Please check your internet connection and try again."
           );
         } else if (error.message?.includes("timeout")) {
-          alert(
+          Alert.alert(
             "Sign-in timed out. Please check your internet connection and try again."
           );
         } else if (error.message?.includes("SDK not properly loaded")) {
-          alert(
+          Alert.alert(
             "Facebook SDK failed to load. Please restart the app and try again."
           );
         } else {
-          alert(`Error during Facebook sign-in: ${error.message || error}`);
+          Alert.alert(`Error during Facebook sign-in: ${error.message || error}`);
         }
       }
     }
