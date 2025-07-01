@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { StyleSheet } from "react-native";
 import { Appbar, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { SignUpProvider } from '../context/SignUpContext';
-import '../styles/fonts.css';
 
 
 
@@ -110,7 +109,8 @@ const styles = StyleSheet.create({
   
   
   appBarTitle: {
-    fontFamily: "TT Supermolot"
+    fontFamily: "tt-supermolot-neue-trl"
+
   },
   background: {
     flex: 1,
