@@ -55,6 +55,8 @@ export default function ContractorOrderProcess() {
             state: data.state,
             zipCode: data.zipCode,
           });
+          // Automatically start location tracking after order is loaded
+          startTracking();
         } else {
           alert("Order not found.");
         }
@@ -67,6 +69,8 @@ export default function ContractorOrderProcess() {
     };
 
     fetchOrder();
+
+    // Cleanup function to stop tracking when component unmounts
     return () => stopTracking();
   }, [orderId]);
 
@@ -91,12 +95,17 @@ export default function ContractorOrderProcess() {
   };
 
   const startTracking = async () => {
+    // Prevent multiple tracking sessions
+    if (isTracking) return;
+
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
       setErrorMsg("Permission to access location was denied");
       return;
     }
+
     setIsTracking(true);
+    setErrorMsg(null);
 
     if (Platform.OS === "web") {
       const id = navigator.geolocation.watchPosition(
@@ -114,26 +123,31 @@ export default function ContractorOrderProcess() {
           updateLocationInFirestore(locationObj);
         },
         (err) => {
-          setErrorMsg(err.message);
+          setErrorMsg(`Location error: ${err.message}`);
           setIsTracking(false);
         },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
       );
       setWebWatchId(id);
     } else {
-      const watcher = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Highest,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
-        (newLocation) => {
-          setLocation(newLocation);
-          setErrorMsg(null);
-          updateLocationInFirestore(newLocation);
-        }
-      );
-      setNativeWatcher(watcher);
+      try {
+        const watcher = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Highest,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (newLocation) => {
+            setLocation(newLocation);
+            setErrorMsg(null);
+            updateLocationInFirestore(newLocation);
+          }
+        );
+        setNativeWatcher(watcher);
+      } catch (error: any) {
+        setErrorMsg(`Failed to start location tracking: ${error.message}`);
+        setIsTracking(false);
+      }
     }
   };
 
@@ -150,6 +164,7 @@ export default function ContractorOrderProcess() {
       }
     }
     setIsTracking(false);
+
     try {
       const locationRef = doc(db, "driverLocations", driverId);
       await setDoc(
@@ -186,19 +201,22 @@ export default function ContractorOrderProcess() {
         </Card.Content>
       </Card>
 
-      <Button mode="contained" onPress={startTracking} disabled={isTracking}>
-        {isTracking ? "Tracking Active..." : "Start Location Sharing"}
-      </Button>
-
-      {isTracking && (
-        <Button
-          mode="outlined"
-          onPress={stopTracking}
-          style={{ marginTop: 10 }}
-        >
-          Stop Location Sharing
-        </Button>
-      )}
+      {/* Location tracking status display */}
+      <Card style={styles.statusCard}>
+        <Card.Content>
+          <Text style={styles.statusTitle}>Location Sharing</Text>
+          <Text
+            style={[
+              styles.statusText,
+              isTracking ? styles.activeStatus : styles.inactiveStatus,
+            ]}
+          >
+            {isTracking
+              ? "🟢 Automatically sharing location with customer"
+              : "🔴 Location sharing inactive"}
+          </Text>
+        </Card.Content>
+      </Card>
 
       <Button
         mode="contained"
@@ -225,9 +243,6 @@ export default function ContractorOrderProcess() {
           <Text>Latitude: {location.coords.latitude.toFixed(6)}</Text>
           <Text>Longitude: {location.coords.longitude.toFixed(6)}</Text>
           <Text>Accuracy: {location.coords.accuracy} meters</Text>
-          <Text style={styles.statusText}>
-            Status: {isTracking ? "🟢 Broadcasting to customers" : "🔴 Offline"}
-          </Text>
         </View>
       )}
     </View>
@@ -251,19 +266,41 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
   },
+  statusCard: {
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 10,
+  },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 10,
   },
+  statusTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
   info: {
     fontSize: 16,
     marginBottom: 5,
   },
+  statusText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  activeStatus: {
+    color: "#4CAF50",
+  },
+  inactiveStatus: {
+    color: "#f44336",
+  },
   locationBox: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#e8f5e8",
     borderRadius: 8,
   },
   locationTitle: {
@@ -275,11 +312,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: "red",
     textAlign: "center",
-  },
-  statusText: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 14,
   },
 });
