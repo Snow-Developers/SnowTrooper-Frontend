@@ -10,9 +10,13 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
+import { useStripe } from '@stripe/stripe-react-native';
 import api, { getAPIToken } from "../services/api";
 
 export default function EditInfoForCustomerRequest() {
+  //Stripe hook
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  
   //For React global context
   const fieldKeys = [
     "firstName",
@@ -28,7 +32,6 @@ export default function EditInfoForCustomerRequest() {
     "selectedPrefTime",
   ];
 
-
   //General user info
   const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
   const [firstName, setFirstName] = useState("");
@@ -39,7 +42,6 @@ export default function EditInfoForCustomerRequest() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
-
 
   //Prefill values upon render
   useEffect(() => {
@@ -91,6 +93,9 @@ export default function EditInfoForCustomerRequest() {
 
   //For error messages
   const [showErrors, setShowErrors] = useState(false);
+  
+  //For loading state for payment
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   //Select button renderings
   const [propertyVisible, setPropertyVisible] = useState(false);
@@ -105,7 +110,6 @@ export default function EditInfoForCustomerRequest() {
   };
 
   //Checkbox options
-  
   const propertySizeOptions = [
     "Tiny",
     "Small",
@@ -135,7 +139,6 @@ export default function EditInfoForCustomerRequest() {
     );
   };
 
-
   //Validate values within fields
   const validateField = (key: string) => {
     switch (key) {
@@ -161,6 +164,81 @@ export default function EditInfoForCustomerRequest() {
         return selectedPrefTime.length === 0;
       default:
         return false;
+    }
+  };
+
+  // Payment
+  const initializePaymentSheet = async () => {
+    try {
+      // Margaret: make changes to this part once backend is done 
+      const response = await api.post('/payment/create-payment', {
+        amount: 5000, // Margaret: $50.00 in cents, static for now, change later when sponsor get back
+        currency: 'usd',
+        customerEmail: email,
+        customerName: `${firstName} ${lastName}`,
+      }, {
+        headers: {
+          Authorization: `Bearer ${getAPIToken()}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const { paymentIntent, ephemeralKey, customer } = response.data;
+
+      // Initialize the payment sheet
+      const { error } = await initPaymentSheet({
+        merchantDisplayName: 'Your Snow Removal Service',
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        paymentIntentClientSecret: paymentIntent,
+        allowsDelayedPaymentMethods: true,
+        defaultBillingDetails: {
+          name: `${firstName} ${lastName}`,
+          email: email,
+        },
+      });
+
+      if (error) {
+        console.error('Payment sheet initialization error:', error);
+        alert('Failed to initialize payment. Please try again.');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error initializing payment sheet:', error);
+      alert('Failed to initialize payment. Please try again.');
+      return false;
+    }
+  };
+
+  const handlePayment = async () => {
+    setIsProcessingPayment(true);
+    
+    try {
+      // Initialize payment sheet
+      const initialized = await initializePaymentSheet();
+      if (!initialized) {
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Present payment sheet
+      const { error } = await presentPaymentSheet();
+
+      if (error) {
+        console.error('Payment error:', error);
+        alert(`Payment failed: ${error.message}`);
+      } else {
+        console.log('Payment successful!');
+        alert('Payment successful!');
+        await handleOrderRequestSubmission();
+      }
+    } catch (error) {
+      console.error('Payment process error:', error);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -193,7 +271,6 @@ export default function EditInfoForCustomerRequest() {
       prefTime: selectedPrefTime,
     };
 
-
     console.log("Submitting Order Request:", customerOrder);
     //Sends HTTP POST request to backend api
     api
@@ -210,6 +287,12 @@ export default function EditInfoForCustomerRequest() {
       .catch((error) => {
         console.log("Response Data:", error);
       });
+  };
+
+  // Validation function for payment button
+  const canProceedToPayment = () => {
+    const missingFields = fieldKeys.filter(validateField);
+    return missingFields.length === 0;
   };
 
   //Dynamically render necessary fields
@@ -445,14 +528,26 @@ export default function EditInfoForCustomerRequest() {
           </>
         )}
 
+        {/* Payment Button */}
         <Button
-        mode="contained"
+          mode="contained"
+          onPress={handlePayment}
+          disabled={!canProceedToPayment() || isProcessingPayment}
+          loading={isProcessingPayment}
+          style={[styles.signupButton, { marginBottom: 10 }]}
+        >
+          {isProcessingPayment ? 'Processing...' : 'Proceed to Payment'}
+        </Button>
+
+        {/* Keep the original submit button for testing/backup */}
+        <Button
+        mode="outlined"
         onPress={() => {
           console.log("Submit button pressed!");
           handleOrderRequestSubmission();
         }}
         style={styles.signupButton}
-        >Submit Order Request</Button>
+        >Submit Order Request (No Payment, kept in case)</Button>
       </View>
     </ScrollView>
   );
