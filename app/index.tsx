@@ -63,13 +63,13 @@ export default function HomeScreen() {
       >
         Log In
       </Button>
-      <Button
+      {/* <Button
         mode="contained"
         style={styles.button}
         onPress={() => router.push("/customerTracking")}
       >
         Location
-      </Button>
+      </Button> */}
     </View>
   );
 }
