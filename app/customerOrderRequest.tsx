@@ -203,14 +203,19 @@ export default function EditInfoForCustomerRequest() {
       );
       console.log("[DEBUG] Request headers will include:", {
         Authorization: `Bearer ${getAPIToken()}`,
-        "Content-Type": "application/json",
+        ...(Platform.OS !== "web" && {
+          "Content-Type": "application/json",
+        }),
+        "ngrok-skip-browser-warning": "11111",
       });
 
       // actual call
       const response = await api.get(`/order/calculate/${uid}`, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
-          "Content-Type": "application/json",
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
           "ngrok-skip-browser-warning": "11111",
         },
       });
@@ -299,7 +304,9 @@ export default function EditInfoForCustomerRequest() {
         {
           headers: {
             Authorization: `Bearer ${getAPIToken()}`,
-            "Content-Type": "application/json",
+            ...(Platform.OS !== "web" && {
+              "Content-Type": "application/json",
+            }),
             "ngrok-skip-browser-warning": "11111",
           },
         }
@@ -442,7 +449,10 @@ export default function EditInfoForCustomerRequest() {
       .post(`/order/create`, customerOrder, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
-          "Content-Type": "application/json",
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
+          "ngrok-skip-browser-warning": "11111",
         },
       })
       .then((response) => {
