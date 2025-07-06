@@ -1,5 +1,5 @@
 import api, { getAPIToken } from "@/services/api";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
 import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 import { Card } from "react-native-paper";
 const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
@@ -54,7 +54,9 @@ export default function WeatherScreen() {
 
   const [loading, setLoading] = useState(true);
 
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -64,15 +66,16 @@ export default function WeatherScreen() {
     setOrdersLoading(true);
     const unsubscribe = onAuthStateChanged(getAuth(), (user: any) => {
       if (user) {
-        api.get(`/order/history/${user.uid}`, {
-          headers: {
-            Authorization: `Bearer ${getAPIToken()}`,
-            ...(Platform.OS !== 'web' && {
-              'Content-Type': 'application/json',
-            }),
-            "ngrok-skip-browser-warning": "11111",
-          },
-        })
+        api
+          .get(`/order/history/${user.uid}`, {
+            headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== "web" && {
+                "Content-Type": "application/json",
+              }),
+              "ngrok-skip-browser-warning": "11111",
+            },
+          })
           .then((result) => {
             setOrders(result.data || []);
           })
@@ -91,28 +94,30 @@ export default function WeatherScreen() {
     return () => unsubscribe();
   }, []);
 
-  const currentOrders = orders.filter((order) => order.orderStatus === "IN-PROGRESS" || order.orderStatus === "WAITING");
+  const currentOrders = orders.filter(
+    (order) =>
+      order.orderStatus === "IN-PROGRESS" || order.orderStatus === "WAITING"
+  );
 
   const fetchWeather = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setErrorMsg('Permission to access location was denied');
+    if (status !== "granted") {
+      setErrorMsg("Permission to access location was denied");
       return;
     }
 
     let location = await Location.getCurrentPositionAsync({});
     setLocation(location);
 
-
     let CITY_NAME;
-    if(errorMsg !== "Permission to access location was denied"){
-      if(location){
-        CITY_NAME = `${location?.coords.latitude}, ${location?.coords.longitude}`
-      }else{
+    if (errorMsg !== "Permission to access location was denied") {
+      if (location) {
+        CITY_NAME = `${location?.coords.latitude}, ${location?.coords.longitude}`;
+      } else {
         console.log("Error getting user location");
         return;
       }
-    }else{
+    } else {
       console.log(errorMsg);
     }
     try {
@@ -133,29 +138,32 @@ export default function WeatherScreen() {
   }, []);
 
   //Get user first name from Firestore
-  const [userFirstName, setUserFirstName] = useState('');
+  const [userFirstName, setUserFirstName] = useState("");
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuth(), (user : any) => {
-      if(!user) return;
-          api.get(`/users/${user.uid}`,
-            {
-              headers: {
-                Authorization: `Bearer ${getAPIToken()}`,
-                ...(Platform.OS !== 'web' && {
-                'Content-Type': 'application/json',
-                }),
-                "ngrok-skip-browser-warning": "11111",
-              }
-          }).then((result) => {
-            setUserFirstName(result.data.firstName || 'User');
-            console.log(result.data);
-          })
-          .catch((error) => {console.log("An error has occurred: ", error)});
-      });
-      return () => unsubscribe();
+    const unsubscribe = onAuthStateChanged(getAuth(), (user: any) => {
+      if (!user) return;
+      api
+        .get(`/users/${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== "web" && {
+              "Content-Type": "application/json",
+            }),
+            "ngrok-skip-browser-warning": "11111",
+          },
+        })
+        .then((result) => {
+          setUserFirstName(result.data.firstName || "User");
+          console.log(result.data);
+        })
+        .catch((error) => {
+          console.log("An error has occurred: ", error);
+        });
+    });
+    return () => unsubscribe();
   }, []);
 
-  const getGreeting = (date = new Date()) =>{
+  const getGreeting = (date = new Date()) => {
     const hour = date.getHours();
 
     if (hour >= 5 && hour < 12) {
@@ -165,20 +173,21 @@ export default function WeatherScreen() {
     } else {
       return "Good Evening";
     }
-
   };
 
-
   return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          >
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* Header */}
         {/* <ImageBackground source={require("../../assets/images/ST_White_Logo_Shield.png")} resizeMode="center" style={styles.image}>
         </ImageBackground> */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>{getGreeting()}, {userFirstName}</Text>
+          <Text style={styles.headerText}>
+            {getGreeting()}, {userFirstName}
+          </Text>
         </View>
 
         {/* Weather Card */}
@@ -190,14 +199,18 @@ export default function WeatherScreen() {
               <Text style={styles.cardTitle}>
                 Now in {weatherData.location.name}
               </Text>
-              <Text style={styles.subText}>{weatherData.location.localtime}</Text>
+              <Text style={styles.subText}>
+                {weatherData.location.localtime}
+              </Text>
 
               <View style={styles.weatherRow}>
                 <Text style={styles.tempText}>
                   {weatherData.current.temp_f.toFixed(0)}°F
                 </Text>
                 <Image
-                  source={{ uri: "https:" + weatherData.current.condition.icon }}
+                  source={{
+                    uri: "https:" + weatherData.current.condition.icon,
+                  }}
                   style={styles.icon}
                 />
               </View>
@@ -221,40 +234,48 @@ export default function WeatherScreen() {
         </View>
 
         {/* Current Orders Section */}
-        
-          <Pressable style={styles.createOrderButton} onPress={() => router.push('/customerOrderRequest')}>
-            <Text style={styles.buttonText}>Create New Order</Text>
-          </Pressable>
-          <Text style={styles.sectionTitle}>Current Orders</Text>
-          {ordersLoading ? (
-            <ActivityIndicator size="large" color="#4ac1d3" />
-          ) : currentOrders.length === 0 ? (
-            <Text style={styles.emptyText}>No current orders.</Text>
-          ) : (
-            currentOrders.map((order) => (
-              <OrderCard key={order.orderId} order={order} />
-            ))
-          )}
-        </ScrollView>
-      </SafeAreaView>
+
+        <Pressable
+          style={styles.createOrderButton}
+          onPress={() => router.push("/customerOrderRequest")}
+        >
+          <Text style={styles.buttonText}>Create New Order</Text>
+        </Pressable>
+        <Text style={styles.sectionTitle}>Current Orders</Text>
+        {ordersLoading ? (
+          <ActivityIndicator size="large" color="#4ac1d3" />
+        ) : currentOrders.length === 0 ? (
+          <Text style={styles.emptyText}>No current orders.</Text>
+        ) : (
+          currentOrders.map((order) => (
+            <OrderCard key={order.orderId} order={order} />
+          ))
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 // Helper function for formatting timestamps
 function formatTimestamp(ts: any) {
-  if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number") return null;
+  if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number")
+    return null;
   const date = new Date(ts.seconds * 1000);
   return date.toLocaleString();
 }
 
-
 function OrderCard({ order }: { order: Order }) {
-  const hasContractor = order.contractorFName && order.contractorLName && order.contractorPhoneNumber;
+  const hasContractor =
+    order.contractorFName &&
+    order.contractorLName &&
+    order.contractorPhoneNumber;
   return (
     <Card style={styles.card}>
       <Card.Content>
         <Text style={styles.cardTitle}>Order #{order.orderId}</Text>
-        <Text style={[styles.status, { color: getStatusColor(order.orderStatus) }]}>
+        <Text
+          style={[styles.status, { color: getStatusColor(order.orderStatus) }]}
+        >
           Status: {order.orderStatus}
         </Text>
         <View style={styles.infoRow}>
@@ -265,22 +286,30 @@ function OrderCard({ order }: { order: Order }) {
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Cleaning:</Text>
-          <Text style={styles.value}>{order.cleaningSpecifics.join(", ")}</Text>
+          <Text style={styles.value}>
+            {order.cleaningSpecifics?.join(", ") || "None"}
+          </Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Preferred Time:</Text>
-          <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+          <Text style={styles.value}>
+            {order.prefTime?.join(", ") || "Not specified"}
+          </Text>
         </View>
         {order.orderPlacedTime && (
           <View style={styles.infoRow}>
             <Text style={styles.label}>Placed:</Text>
-            <Text style={styles.value}>{formatTimestamp(order.orderPlacedTime)}</Text>
+            <Text style={styles.value}>
+              {formatTimestamp(order.orderPlacedTime)}
+            </Text>
           </View>
         )}
         {order.orderFulfilledTime && (
           <View style={styles.infoRow}>
             <Text style={styles.label}>Fulfilled:</Text>
-            <Text style={styles.value}>{formatTimestamp(order.orderFulfilledTime)}</Text>
+            <Text style={styles.value}>
+              {formatTimestamp(order.orderFulfilledTime)}
+            </Text>
           </View>
         )}
         <View style={styles.contractorSection}>
@@ -299,7 +328,9 @@ function OrderCard({ order }: { order: Order }) {
               </View>
             </>
           ) : (
-            <Text style={styles.value}>No contractor has picked up the order yet.</Text>
+            <Text style={styles.value}>
+              No contractor has picked up the order yet.
+            </Text>
           )}
         </View>
       </Card.Content>
@@ -323,10 +354,9 @@ function getStatusColor(status: string): string {
   }
 }
 
-
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: "#f2f2f2",
   },
   header: { padding: 20 },
@@ -338,8 +368,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 5,
   },
-  cardTitle: { 
-    fontSize: 18, fontWeight: "bold" 
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
   },
   subText: { color: "#777", marginBottom: 10 },
   weatherRow: {
@@ -367,24 +398,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   createOrderButton: {
-    backgroundColor: '#4ac1d3',
+    backgroundColor: "#4ac1d3",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 30,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 10,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    },
+  },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
-    },
-    sectionTitle: {
+    fontWeight: "bold",
+  },
+  sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginTop: 56,
