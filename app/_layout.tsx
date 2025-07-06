@@ -89,7 +89,7 @@ export default function RootLayout() {
 
   return (
     <PaperProvider theme={customTheme}>
-      <StripeProvider publishableKey="pk_test_51PoUcnHOAzpYfGljjhrhSD3b0Mu9XErUdWlioMR2pGTbVdxv7l5u917QGX2KhOJek6zJMpQ46kFsbmu94F8UPZvV00R14w1MES">
+      <StripeProvider publishableKey="pk_test_51RhIhdRZ9LUagJRTHcaFv47iWwVIf3AB6MnGMmLolr4EZDLJUUvfhezOfkpgxIGtzthytL1295FYUVjabatgNQIr00LuW2ODJK">
         <SignUpProvider>
           {isAuthenticated && (
             <Appbar.Header
