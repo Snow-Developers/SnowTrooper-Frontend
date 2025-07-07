@@ -177,6 +177,63 @@ export default function EditInfoForCustomerRequest() {
     }
   };
 
+  // Update user profile before calculating price
+  const updateUserProfile = async () => {
+    console.log("[DEBUG] Updating user profile using FormData approach...");
+    setIsUpdatingProfile(true);
+
+    try {
+      await ensureAPIAuthentication();
+
+      // Create userProfile object 
+      const userProfile = {
+        uid,
+        profilePicture: "", // leave empty for now, maybe can be a feature in the future
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        role: "Customer", 
+        streetAddress,
+        city,
+        state,
+        zipCode,
+        crewSize: "", 
+        prefPropertySizeWork: [], 
+        prefRadiusWork: "", 
+        equipments: [], 
+        customerPropertySize,
+        hasPropertySteps: hasSteps,
+        usePetFriendlyMaterial: isPetFriendly,
+        cleaningSpecifics: selectedCleaningSpecifics,
+        prefTime: selectedPrefTime,
+      };
+
+      // Create FormData 
+      const formData = new FormData();
+      formData.append("userProfile", JSON.stringify(userProfile));
+
+      // Leave file empty
+
+      const response = await api.put(`/users/update/${uid}`, formData, {
+        headers: {
+          Authorization: `Bearer ${getAPIToken()}`,
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "multipart/form-data",
+          }),
+        },
+      });
+
+      console.log("[DEBUG] Profile updated successfully:", response.data);
+      return true;
+    } catch (error) {
+      console.error("[DEBUG] Profile update failed:", error);
+      throw error;
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   // Calculate price from backend
   const calculateOrderPrice = async () => {
     console.log("[DEBUG] Starting price calculation...");
@@ -229,23 +286,26 @@ export default function EditInfoForCustomerRequest() {
       return;
     }
 
-    console.log("[DEBUG] All fields validated, calculating price...");
+    console.log("[DEBUG] All fields validated, updating profile...");
 
-    // !!!!!!!!! TEMPORARILY SKIP PROFILE UPDATE DUE TO 403 ERROR !!!!!!!!!
-    // !!!!!!!!! Will change later!!!!!!!!!!!
-    console.log(
-      "[DEBUG] Skipping profile update due to 403 error - using existing profile data"
-    );
+    try {
+      // Update user profile 
+      await updateUserProfile();
+      console.log("[DEBUG] Profile updated successfully, calculating price...");
 
-    // Calculate the price
-    const priceData = await calculateOrderPrice();
-    if (!priceData) {
-      return;
+      // Calculate the price
+      const priceData = await calculateOrderPrice();
+      if (!priceData) {
+        return;
+      }
+
+      // Show price and payment button
+      setShowPriceAndPayment(true);
+      console.log("[DEBUG] Price calculated, showing payment options");
+    } catch (error) {
+      console.error("[DEBUG] Error during proceed to payment:", error);
+      alert("Failed to update profile. Please try again.");
     }
-
-    // Show price and payment button
-    setShowPriceAndPayment(true);
-    console.log("[DEBUG] Price calculated, showing payment options");
   };
 
   // Initialize payment sheet with Stripe
@@ -556,140 +616,6 @@ export default function EditInfoForCustomerRequest() {
     return missingFields.length === 0;
   };
 
-  // Debug functions
-  const updateUserProfileSimple = async () => {
-    console.log("[DEBUG] Updating user profile...");
-    setIsUpdatingProfile(true);
-
-    const userData = {
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-      streetAddress,
-      city,
-      state,
-      zipCode,
-      customerPropertySize,
-      hasPropertySteps: hasSteps,
-      usePetFriendlyMaterial: isPetFriendly,
-      cleaningSpecifics: selectedCleaningSpecifics,
-      prefTime: selectedPrefTime,
-    };
-
-    try {
-      await ensureAPIAuthentication();
-
-      const response = await api.put(`/users/update/${uid}`, userData, {
-        headers: {
-          Authorization: `Bearer ${getAPIToken()}`,
-          ...(Platform.OS !== "web" && {
-            "Content-Type": "application/json",
-          }),
-          "ngrok-skip-browser-warning": "11111",
-        },
-      });
-
-      console.log("[DEBUG] JSON update successful:", response.data);
-      alert("Profile updated successfully!");
-      return true;
-    } catch (error) {
-      console.error("[DEBUG] JSON update failed:", error);
-      alert("Failed to update profile. Please try again.");
-      return false;
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  };
-
-  const debugAuthAndHeaders = async () => {
-    console.log("[DEBUG] Debugging authentication and headers...");
-
-    const currentToken = getAPIToken();
-    console.log("[DEBUG] Current API Token:", currentToken ? "EXISTS" : "NULL");
-    console.log("[DEBUG] Platform.OS:", Platform.OS);
-
-    try {
-      const getResponse = await api.get(`/users/${uid}`, {
-        headers: {
-          Authorization: `Bearer ${currentToken}`,
-          ...(Platform.OS !== "web" && {
-            "Content-Type": "application/json",
-          }),
-          "ngrok-skip-browser-warning": "11111",
-        },
-      });
-      console.log("[DEBUG] GET request worked:", getResponse.status);
-
-      const putResponse = await api.put(
-        `/users/update/${uid}`,
-        { test: "data" },
-        {
-          headers: {
-            Authorization: `Bearer ${currentToken}`,
-            ...(Platform.OS !== "web" && {
-              "Content-Type": "application/json",
-            }),
-            "ngrok-skip-browser-warning": "11111",
-          },
-        }
-      );
-      console.log("[DEBUG] PUT request worked:", putResponse.status);
-    } catch (error) {
-      console.error("[DEBUG] Request failed:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url,
-        method: error.config?.method,
-      });
-    }
-  };
-
-  const testAPIConnectivity = async () => {
-    console.log("[DEBUG] Testing API connectivity...");
-
-    try {
-      const getUserResponse = await api.get(`/users/${uid}`, {
-        headers: {
-          Authorization: `Bearer ${getAPIToken()}`,
-          ...(Platform.OS !== "web" && {
-            "Content-Type": "application/json",
-          }),
-          "ngrok-skip-browser-warning": "11111",
-        },
-      });
-      console.log("[DEBUG] GET /users worked:", getUserResponse.status);
-
-      try {
-        const testResponse = await api.put(
-          `/users/update/${uid}`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${getAPIToken()}`,
-              ...(Platform.OS !== "web" && {
-                "Content-Type": "application/json",
-              }),
-              "ngrok-skip-browser-warning": "11111",
-            },
-          }
-        );
-        console.log("[DEBUG] PUT endpoint exists:", testResponse.status);
-      } catch (endpointError) {
-        console.log("[DEBUG] PUT endpoint test error:", {
-          status: endpointError.response?.status,
-          statusText: endpointError.response?.statusText,
-          message: endpointError.message,
-        });
-      }
-
-      console.log("[DEBUG] API Base URL:", api.defaults.baseURL);
-    } catch (error) {
-      console.error("[DEBUG] Basic connectivity test failed:", error);
-      alert("Cannot connect to API. Check if your backend server is running.");
-    }
-  };
-
   const renderField = (
     fieldName: string,
     label: string,
@@ -988,45 +914,6 @@ export default function EditInfoForCustomerRequest() {
             </Button>
           </>
         )}
-
-        {/* Debug Buttons - Keep only essential ones */}
-        <View style={styles.debugSection}>
-          <Button
-            mode="text"
-            onPress={calculateOrderPrice}
-            disabled={isCalculatingPrice}
-            loading={isCalculatingPrice}
-            style={styles.debugButton}
-          >
-            Debug: Calculate Price Only
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={updateUserProfileSimple}
-            disabled={isUpdatingProfile}
-            loading={isUpdatingProfile}
-            style={styles.debugButton}
-          >
-            Debug: Test Simple Update
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={debugAuthAndHeaders}
-            style={styles.debugButton}
-          >
-            Debug: Check Auth & Headers
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={testAPIConnectivity}
-            style={styles.debugButton}
-          >
-            Debug: Test API Connectivity
-          </Button>
-        </View>
       </View>
     </ScrollView>
   );
