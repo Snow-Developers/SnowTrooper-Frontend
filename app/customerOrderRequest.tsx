@@ -2,7 +2,7 @@ import { useStripe } from "@stripe/stripe-react-native";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View, Image } from "react-native";
 import {
   Button,
   Checkbox,
@@ -11,7 +11,9 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
-import api, { ensureAPIAuthentication, getAPIToken } from "../services/api";
+import * as ImagePicker from "expo-image-picker";
+
+import api, { getAPIToken } from "../services/api";
 
 export default function EditInfoForCustomerRequest() {
   //Stripe hook
@@ -32,8 +34,28 @@ export default function EditInfoForCustomerRequest() {
     "selectedPrefTime",
   ];
 
+  // Function to take a picture using the camera
+  const takePicture = async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cameraPermission.granted) {
+      alert("Camera permission is required!");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+      exif: true,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      setImage(result.assets[0].uri ?? "");
+      const timestamp = new Date().toLocaleString(); // Get current timestamp
+      setImageTimestamp(timestamp);
+      console.log("Image captured at:", timestamp);
+    }
+  };
+
   //General user info
-  const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
+  const [uid] = useState(getAuth().currentUser?.uid || "");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,6 +64,45 @@ export default function EditInfoForCustomerRequest() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
+  const [image, setImage] = useState<string>("");
+  const [imageTimestamp, setImageTimestamp] = useState<string>("");
+
+
+  //Prefill values upon render
+  useEffect(() => {
+    api
+      .get(`/users/${uid}`, {
+        headers: {
+          Authorization: `Bearer ${getAPIToken()}`,
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
+          "ngrok-skip-browser-warning": "11111",
+        },
+      })
+      .then((response) => {
+        const data = response.data;
+        console.log("User profile data:", data);
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+        setEmail(data.email || "");
+        setPhoneNumber(data.phoneNumber || "");
+        setStreetAddress(data.streetAddress || "");
+        setCity(data.city || "");
+        setState(data.state || "");
+        setZipCode(data.zipCode || "");
+
+        // Customer-specific fields
+        setCustomerPropertySize(data.customerPropertySize || "");
+        setHasSteps(data.hasPropertySteps ?? true);
+        setIsPetFriendly(data.usePetFriendlyMaterial ?? true);
+        setSelectedCleaningSpecifics(data.cleaningSpecifics || []);
+        setSelectedPrefTime(data.prefTime || []);
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+      });
+  }, [uid]);
 
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
@@ -82,6 +143,14 @@ export default function EditInfoForCustomerRequest() {
   };
 
   //Checkbox options
+
+  const propertySizeOptions = [
+    "Tiny",
+    "Small",
+    "Medium",
+    "Large",
+    "Extra Large",
+  ];
   const cleaningSpecificsOptions = ["Snow Removal", "Salting"];
   const prefTimeOptions = [
     { key: "Overnight", label: "Overnight (12:00 AM - 5:00 AM)" },
@@ -566,48 +635,26 @@ export default function EditInfoForCustomerRequest() {
       usePetFriendlyMaterial: isPetFriendly,
       cleaningSpecifics: selectedCleaningSpecifics,
       prefTime: selectedPrefTime,
+      image: image,
+      imageTimestamp: imageTimestamp,
     };
 
-    const orderRequest = {
-      paymentIntent: orderPaymentIntentId,
-      order: orderData,
-    };
-
-    try {
-      const response = await api.post(`/order/create`, orderRequest, {
+    console.log("Submitting Order Request:", customerOrder);
+    //Sends HTTP POST request to backend api
+    api
+      .post(`/order/create`, customerOrder, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
-          ...(Platform.OS !== "web" && {
-            "Content-Type": "application/json",
-          }),
-          "ngrok-skip-browser-warning": "11111",
+          "Content-Type": "application/json",
         },
+      })
+      .then(() => {
+        console.log("Snow Removal Request has been updated successfully");
+        router.replace("/customerHomeScreen");
+      })
+      .catch((error) => {
+        console.log("Response Data:", error);
       });
-
-      console.log("[DEBUG] Order created successfully:", response.data);
-
-      const { orderId, message } = response.data;
-      alert(`${message}\nOrder ID: ${orderId}`);
-
-      router.replace("/customerHomeScreen");
-    } catch (error) {
-      console.error("[DEBUG] Order submission error:", error);
-
-      if (error.response?.status === 500) {
-        alert(
-          "Server error occurred while creating order. Payment was successful but order creation failed. Please contact support."
-        );
-      } else if (error.response?.status === 465) {
-        alert(
-          "Payment verification failed. Please contact support with payment intent: " +
-            orderPaymentIntentId
-        );
-      } else {
-        alert(
-          "Order creation failed. Payment was successful but order could not be saved. Please contact support."
-        );
-      }
-    }
   };
 
   // Validation function for payment button
@@ -684,60 +731,62 @@ export default function EditInfoForCustomerRequest() {
 
         <Text variant="headlineMedium">Preferences</Text>
 
-        {/* Property Size Selection */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Your Property Size
-        </Text>
-        <View
-          style={{
-            paddingTop: 5,
-            flexDirection: "row",
-            justifyContent: "center",
-          }}
-        >
-          <Menu
-            visible={propertyVisible}
-            onDismiss={closePropertyMenu}
-            anchor={
-              <Button
-                mode="outlined"
-                onPress={openPropertyMenu}
-                style={[
-                  showErrors &&
-                    validateField("customerPropertySize") && {
-                      borderColor: "red",
-                    },
-                ]}
+        {/*Customer Preferences View */}
+        {
+          <>
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Your Property Size
+            </Text>
+            <View
+              style={{
+                paddingTop: 5,
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+            >
+              <Menu
+                visible={propertyVisible}
+                onDismiss={closePropertyMenu}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={openPropertyMenu}
+                    style={[
+                      showErrors &&
+                        validateField("customerPropertySize") && {
+                          borderColor: "red",
+                        },
+                    ]}
+                  >
+                    {customerPropertySize || "Select Property Size"}
+                  </Button>
+                }
               >
-                {customerPropertySize || "Select Property Size"}
-              </Button>
-            }
-          >
-            <Menu.Item
-              onPress={() => handlePropertySelect("Tiny")}
-              title="Tiny (0-500 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Small")}
-              title="Small (501-1,501 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Medium")}
-              title="Medium (1,501-3,000 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Large")}
-              title="Large (3,001-6,000 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Extra Large")}
-              title="Extra Large (6,001+ sq ft)"
-            />
-          </Menu>
-        </View>
-        {showErrors && validateField("customerPropertySize") && (
-          <HelperText type="error">Property size is required</HelperText>
-        )}
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Tiny")}
+                  title="Tiny (0-500 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Small")}
+                  title="Small (501-1,501 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Medium")}
+                  title="Medium (1,501-3,000 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Large")}
+                  title="Large (3,001-6,000 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Extra Large")}
+                  title="Extra Large (6,001+ sq ft)"
+                />
+              </Menu>
+            </View>
+            {showErrors && validateField("customerPropertySize") && (
+              <HelperText type="error">Property size is required</HelperText>
+            )}
 
         {/* Cleaning Specifics */}
         <Text variant="headlineMedium" style={styles.promptText}>
@@ -913,7 +962,44 @@ export default function EditInfoForCustomerRequest() {
               Modify Order Details
             </Button>
           </>
-        )}
+        }
+
+        <Button
+          mode="contained"
+          onPress={takePicture}
+          style={{ marginVertical: 12 }}
+        >
+          Take a Picture
+        </Button>
+        {image ? (
+          <View style={{ alignItems: "center", marginVertical: 8 }}>
+            <Image
+              source={{ uri: image }}
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: 10,
+                marginBottom: 4,
+              }}
+            />
+            {imageTimestamp ? (
+              <Text style={{ color: '#666', fontSize: 14 }}>
+                {`Captured at: ${imageTimestamp}`}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <Button
+          mode="contained"
+          onPress={() => {
+            console.log("Submit button pressed!");
+            handleOrderRequestSubmission();
+          }}
+          style={styles.signupButton}
+        >
+          Submit Order Request
+        </Button>
       </View>
     </ScrollView>
   );
@@ -980,35 +1066,14 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: 8,
   },
-  priceSection: {
-    marginVertical: 20,
-    padding: 15,
-    backgroundColor: "#f0f8ff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#00bedc",
+  errorText: {
+    color: "#B00020",
+    fontSize: 12,
+    marginTop: 4,
   },
-  priceTitle: {
-    textAlign: "center",
-    marginBottom: 10,
-    color: "#00bedc",
-  },
-  priceBreakdown: {
-    gap: 5,
-  },
-  priceItem: {
-    fontSize: 16,
-    color: "#333",
-  },
-  priceTotal: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#00bedc",
-    marginTop: 10,
-    textAlign: "center",
-  },
-  debugButton: {
-    paddingHorizontal: 10,
-    marginBottom: 5,
+  image: {
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
   },
 });
