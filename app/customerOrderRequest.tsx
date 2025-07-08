@@ -33,7 +33,7 @@ export default function EditInfoForCustomerRequest() {
   ];
 
   //General user info
-  const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
+  const [uid] = useState(getAuth().currentUser?.uid || "");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,6 +42,8 @@ export default function EditInfoForCustomerRequest() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
+  const [image, setImage] = useState<string>("");
+  const [imageTimestamp, setImageTimestamp] = useState<string>("");
 
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
@@ -566,6 +568,8 @@ export default function EditInfoForCustomerRequest() {
       usePetFriendlyMaterial: isPetFriendly,
       cleaningSpecifics: selectedCleaningSpecifics,
       prefTime: selectedPrefTime,
+      image: image,
+      imageTimestamp: imageTimestamp,
     };
 
     const orderRequest = {
@@ -1010,5 +1014,10 @@ const styles = StyleSheet.create({
   debugButton: {
     paddingHorizontal: 10,
     marginBottom: 5,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
   },
 });

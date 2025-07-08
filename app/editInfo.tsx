@@ -412,7 +412,9 @@ export default function EditInfo() {
       });
 
       if(userRole === "Customer"){
-        router.replace("/homeScreen");
+        router.replace("/(tabs)/customerHomeScreen");
+      } else if(userRole === "Contractor") {
+        router.replace("/(tabs)/contractorHomeScreen");
       }
   };
 
