@@ -1,6 +1,11 @@
 import api, { getAPIToken } from "@/services/api";
 import { router } from "expo-router";
-import { deleteUser, getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  deleteUser,
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -11,9 +16,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Button } from "react-native-paper";
 
 export default function ProfileScreen() {
-
   const [profilePicture, setProfilePicture] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -26,61 +31,63 @@ export default function ProfileScreen() {
   const [zipCode, setZipCode] = useState("");
 
   //Customer Preference
-  const [customerPropertySize, setCustomerPropertySize] = useState('');
+  const [customerPropertySize, setCustomerPropertySize] = useState("");
   const [cleaningSpecifics, setCleaningSpecifics] = useState([]);
   const [preferredTimes, setPreferredTimes] = useState([]);
   const [propertySteps, setPropertySteps] = useState(null);
   const [usePetFriendlyMaterial, setUsePetFriendlyMaterial] = useState(null);
 
   //Contractor preference
-  const [crewSize, setCrewSize] = useState('');
+  const [crewSize, setCrewSize] = useState("");
   const [contractorPropertySize, setContractorPropertySize] = useState([]);
   const [preferredRadius, setPreferredRadius] = useState([]);
   const [equipmentTypes, setEquipmentTypes] = useState([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
-      if(!user) return;
-      api.get(`/users/${user.uid}`,
-            {
-              headers: {
-                Authorization: `Bearer ${getAPIToken()}`,
-                ...(Platform.OS !== 'web' && {
-                'Content-Type': 'application/json',
-                }),
-                "ngrok-skip-browser-warning": "11111",
-              }
-          }).then((result) => {
-            //Profile details
-            setProfilePicture(result.data.profilePicture || '');
-            setFirstName(result.data.firstName || '');
-            setLastName(result.data.lastName || '');
-            setEmail(result.data.email || '');
-            setPhoneNumber(result.data.phoneNumber || '');
-            setUserRole(result.data.role || 'Customer');
-            setStreetAddress(result.data.streetAddress || '');
-            setCity(result.data.city || '');
-            setState(result.data.state || '');
-            setZipCode(result.data.zipCode || '');
+      if (!user) return;
+      api
+        .get(`/users/${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            ...(Platform.OS !== "web" && {
+              "Content-Type": "application/json",
+            }),
+            "ngrok-skip-browser-warning": "11111",
+          },
+        })
+        .then((result) => {
+          //Profile details
+          setProfilePicture(result.data.profilePicture || "");
+          setFirstName(result.data.firstName || "");
+          setLastName(result.data.lastName || "");
+          setEmail(result.data.email || "");
+          setPhoneNumber(result.data.phoneNumber || "");
+          setUserRole(result.data.role || "Customer");
+          setStreetAddress(result.data.streetAddress || "");
+          setCity(result.data.city || "");
+          setState(result.data.state || "");
+          setZipCode(result.data.zipCode || "");
 
-            // Customer fields
-            setCustomerPropertySize(result.data.customerPropertySize || '');
-            setCleaningSpecifics(result.data.cleaningSpecifics || []);
-            setPreferredTimes(result.data.prefTime || []);
-            setPropertySteps(result.data.hasPropertySteps || null);
-            setUsePetFriendlyMaterial(result.data.usePetFriendlyMaterial || null);
+          // Customer fields
+          setCustomerPropertySize(result.data.customerPropertySize || "");
+          setCleaningSpecifics(result.data.cleaningSpecifics || []);
+          setPreferredTimes(result.data.prefTime || []);
+          setPropertySteps(result.data.hasPropertySteps || null);
+          setUsePetFriendlyMaterial(result.data.usePetFriendlyMaterial || null);
 
-            // Contractor fields
-            setCrewSize(result.data.crewSize || '');
-            setContractorPropertySize(result.data.prefPropertySizeWork || []);
-            setPreferredRadius(result.data.prefRadiusWork || '');
-            setEquipmentTypes(result.data.equipments || []);
-          })
-          .catch((error) => {console.log("An error has occurred: ", error)});
+          // Contractor fields
+          setCrewSize(result.data.crewSize || "");
+          setContractorPropertySize(result.data.prefPropertySizeWork || []);
+          setPreferredRadius(result.data.prefRadiusWork || "");
+          setEquipmentTypes(result.data.equipments || []);
+        })
+        .catch((error) => {
+          console.log("An error has occurred: ", error);
         });
-        return () => unsubscribe();
+    });
+    return () => unsubscribe();
   }, []);
-
 
   const handleLogOut = async () => {
     signOut(getAuth()).then(() => {
@@ -98,20 +105,22 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = () => {
-     if (Platform.OS === 'web') {
-      const confirmed = window.confirm("Are you sure you want to delete your account?");
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete your account?"
+      );
       if (confirmed) {
         const user = getAuth().currentUser!;
         deleteUser(user)
-        .then(() => {
-          Alert.alert("Account has been deleted");
-          console.log("Account has been deleted");
-          router.replace("/");
-        })
-        .catch((error) => {
-          Alert.alert("An error has occured: ", error);
-          console.log("An error has occured: ", error);
-        });
+          .then(() => {
+            Alert.alert("Account has been deleted");
+            console.log("Account has been deleted");
+            router.replace("/");
+          })
+          .catch((error) => {
+            Alert.alert("An error has occured: ", error);
+            console.log("An error has occured: ", error);
+          });
       } else {
         console.log("User cancelled");
       }
@@ -121,19 +130,22 @@ export default function ProfileScreen() {
         "Are you sure you want to delete your account?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Yes", onPress: () => {
-            const user = getAuth().currentUser!;
-            deleteUser(user)
-            .then(() => {
-              Alert.alert("Account has been deleted");
-              console.log("Account has been deleted");
-              router.replace("/");
-            })
-            .catch((error) => {
-              Alert.alert("An error has occured: ", error);
-              console.log("An error has occured: ", error);
-            });
-          }},
+          {
+            text: "Yes",
+            onPress: () => {
+              const user = getAuth().currentUser!;
+              deleteUser(user)
+                .then(() => {
+                  Alert.alert("Account has been deleted");
+                  console.log("Account has been deleted");
+                  router.replace("/");
+                })
+                .catch((error) => {
+                  Alert.alert("An error has occured: ", error);
+                  console.log("An error has occured: ", error);
+                });
+            },
+          },
         ],
         { cancelable: true }
       );
@@ -151,23 +163,24 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* Profile Image */}
-      <Image
-        source={{ uri: profilePicture }}
-        style={styles.profileImage}
-      />
+      <Image source={{ uri: profilePicture }} style={styles.profileImage} />
 
       {/* Name */}
-      <Text style={styles.nameText}>{firstName} {lastName}</Text>
+      <Text style={styles.nameText}>
+        {firstName} {lastName}
+      </Text>
 
       {/* Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.sectionTitle}>Personal Information</Text>
 
         <View style={styles.subSection}>
-        <Text style={styles.itemText}>Email: {email}</Text>
-        <Text style={styles.itemText}>Phone Number: {phoneNumber}</Text>
-        <Text style={styles.itemText}>Address: {streetAddress}, {city}, {state}, {zipCode}</Text>
-        <Text style={styles.itemText}>Role: {userRole}</Text>
+          <Text style={styles.itemText}>Email: {email}</Text>
+          <Text style={styles.itemText}>Phone Number: {phoneNumber}</Text>
+          <Text style={styles.itemText}>
+            Address: {streetAddress}, {city}, {state}, {zipCode}
+          </Text>
+          <Text style={styles.itemText}>Role: {userRole}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Preferences</Text>
@@ -175,11 +188,21 @@ export default function ProfileScreen() {
         {/* Customer */}
         {userRole === "Customer" && (
           <View style={styles.subSection}>
-            <Text style={styles.itemText}>Property Size: {customerPropertySize}</Text>
-            <Text style={styles.itemText}>Cleaning Specifics: {cleaningSpecifics.join(', ')}</Text>
-            <Text style={styles.itemText}>Preferred Time(s): {preferredTimes.join(', ')}</Text>
-            <Text style={styles.itemText}>Have Property Steps: {propertySteps ? 'Yes' : 'No'}</Text>
-            <Text style={styles.itemText}>Use Pet friendly material: {usePetFriendlyMaterial ? 'Yes' : 'No'}</Text>
+            <Text style={styles.itemText}>
+              Property Size: {customerPropertySize}
+            </Text>
+            <Text style={styles.itemText}>
+              Cleaning Specifics: {cleaningSpecifics.join(", ")}
+            </Text>
+            <Text style={styles.itemText}>
+              Preferred Time(s): {preferredTimes.join(", ")}
+            </Text>
+            <Text style={styles.itemText}>
+              Have Property Steps: {propertySteps ? "Yes" : "No"}
+            </Text>
+            <Text style={styles.itemText}>
+              Use Pet friendly material: {usePetFriendlyMaterial ? "Yes" : "No"}
+            </Text>
           </View>
         )}
 
@@ -187,141 +210,159 @@ export default function ProfileScreen() {
         {userRole === "Contractor" && (
           <View style={styles.subSection}>
             <Text style={styles.itemText}>Crew Size: {crewSize}</Text>
-            <Text style={styles.itemText}>Property Size to Work on: {contractorPropertySize.join(', ')}</Text>
-            <Text style={styles.itemText}>Preferred Radius to Work: {preferredRadius}</Text>
-            <Text style={styles.itemText}>Types of Equipment: {equipmentTypes.join(', ')}</Text>
+            <Text style={styles.itemText}>
+              Property Size to Work on: {contractorPropertySize.join(", ")}
+            </Text>
+            <Text style={styles.itemText}>
+              Preferred Radius to Work: {preferredRadius}
+            </Text>
+            <Text style={styles.itemText}>
+              Types of Equipment: {equipmentTypes.join(", ")}
+            </Text>
           </View>
         )}
       </View>
-      
 
       {/* Buttons */}
-      <View style = {styles.buttons}>
-        <TouchableOpacity
-          style={styles.logout}
+      <View style={styles.buttons}>
+        <Button
+          mode="contained"
           onPress={handleLogOut}
+          style={styles.logoutButton}
+          labelStyle={styles.buttonText}
         >
-          <Text style={styles.buttonText}>Log Out</Text>
-        </TouchableOpacity>
+          Log Out
+        </Button>
 
-
-        <TouchableOpacity
-          style={styles.changePasswordButton}
+        <Button
+          mode="contained"
           onPress={handleChangePassword}
+          style={styles.changePasswordButton}
+          labelStyle={styles.buttonText}
         >
-          <Text style={styles.buttonText}>Change Password</Text>
-        </TouchableOpacity>
+          Change Password
+        </Button>
 
-        <TouchableOpacity
-          style={styles.deleteAccountButton}
+        <Button
+          mode="contained"
           onPress={handleDeleteAccount}
+          style={styles.deleteAccountButton}
+          labelStyle={styles.deleteButtonText}
         >
-          <Text style={styles.deleteButtonText}>Delete Account</Text>
-        </TouchableOpacity>
+          Delete Account
+        </Button>
       </View>
     </View>
-    
-        
   );
 }
 
 const styles = StyleSheet.create({
-  infoContainer: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    color: '#333',
-  },
-  subSection: {
-    marginTop: 8,
-    marginLeft: 12,
-  },
-  itemText: {
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#555',
-  },
   container: {
     flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
+    paddingHorizontal: 20,
+    paddingBottom: 140,
+    flexGrow: 1,
   },
   editProfileButton: {
     position: "absolute",
-    top: 20,
+    top: 10,
     right: 20,
+    zIndex: 1,
   },
   editProfileText: {
     color: "#007AFF",
     fontSize: 16,
+    fontWeight: "600",
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: "#4ac1d3",
-    marginTop: 20,
+    marginTop: 40,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    alignSelf: "center",
   },
   nameText: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginTop: 10,
-  },
-  infoText: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginTop: 15,
+    color: "#333",
     textAlign: "center",
+    alignSelf: "center",
+  },
+  infoContainer: {
+    padding: 16,
+    width: "100%",
+    alignItems: "center",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 8,
+    marginBottom: 4,
+    color: "#333",
+    textAlign: "center",
+    width: "100%",
+  },
+  subSection: {
+    marginTop: 4,
+    marginLeft: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  itemText: {
     fontSize: 14,
+    marginBottom: 2,
     color: "#555",
-    marginVertical: 20,
-    paddingHorizontal: 20,
+    textAlign: "center",
   },
   buttons: {
-    flex: 1,
-    flexDirection: "column",
+    width: "100%",
+    paddingHorizontal: 20,
+    gap: 8,
+    marginTop: 12,
   },
-  logout: {
-    backgroundColor: "#4ac1d3",
-    textAlign: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+  logoutButton: {
+    backgroundColor: "#00c1de",
     borderRadius: 20,
-    marginBottom: 10,
+    paddingVertical: 4,
+    width: 200,
+    alignSelf: "center",
   },
   changePasswordButton: {
-    backgroundColor: "#4ac1d3",
-    textAlign: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    backgroundColor: "#00c1de",
     borderRadius: 20,
-    marginBottom: 10,
+    paddingVertical: 4,
+    width: 200,
+    alignSelf: "center",
   },
   deleteAccountButton: {
-    backgroundColor: "#FF3B30",
-    textAlign: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    backgroundColor: "#e74c3c",
     borderRadius: 20,
-    marginBottom: 10,
+    paddingVertical: 4,
+    width: 200,
+    alignSelf: "center",
   },
   buttonText: {
-    color: "#000",
-    fontSize: 16,
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "bold",
   },
   deleteButtonText: {
     color: "#fff",
-    fontSize: 16,
-  },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#4ac1d3",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 12,
+    fontSize: 15,
+    fontWeight: "bold",
   },
 });
