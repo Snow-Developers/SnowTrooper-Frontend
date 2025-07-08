@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View, Image } from "react-native";
 import {
   Button,
   Checkbox,
@@ -10,6 +10,8 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
+import * as ImagePicker from "expo-image-picker";
+
 import api, { getAPIToken } from "../services/api";
 
 export default function EditInfoForCustomerRequest() {
@@ -28,9 +30,28 @@ export default function EditInfoForCustomerRequest() {
     "selectedPrefTime",
   ];
 
+  // Function to take a picture using the camera
+  const takePicture = async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cameraPermission.granted) {
+      alert("Camera permission is required!");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+      exif: true,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      setImage(result.assets[0].uri ?? "");
+      const timestamp = new Date().toLocaleString(); // Get current timestamp
+      setImageTimestamp(timestamp);
+      console.log("Image captured at:", timestamp);
+    }
+  };
 
   //General user info
-  const [uid, setUid] = useState(getAuth().currentUser?.uid || "");
+  const [uid] = useState(getAuth().currentUser?.uid || "");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,44 +60,45 @@ export default function EditInfoForCustomerRequest() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
+  const [image, setImage] = useState<string>("");
+  const [imageTimestamp, setImageTimestamp] = useState<string>("");
 
 
   //Prefill values upon render
   useEffect(() => {
-    api.get(`/users/${uid}`, {
+    api
+      .get(`/users/${uid}`, {
         headers: {
-        Authorization: `Bearer ${getAPIToken()}`,
-        ...(Platform.OS !== 'web' && {
-            'Content-Type': 'application/json',
-        }),
-        "ngrok-skip-browser-warning": "11111",
+          Authorization: `Bearer ${getAPIToken()}`,
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
+          "ngrok-skip-browser-warning": "11111",
         },
-    })
-    .then((response) => {
+      })
+      .then((response) => {
         const data = response.data;
         console.log("User profile data:", data);
-        setFirstName(data.firstName || '');
-        setLastName(data.lastName || '');
-        setEmail(data.email || '');
-        setPhoneNumber(data.phoneNumber || '');
-        setStreetAddress(data.streetAddress || '');
-        setCity(data.city || '');
-        setState(data.state || '');
-        setZipCode(data.zipCode || '');
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+        setEmail(data.email || "");
+        setPhoneNumber(data.phoneNumber || "");
+        setStreetAddress(data.streetAddress || "");
+        setCity(data.city || "");
+        setState(data.state || "");
+        setZipCode(data.zipCode || "");
 
         // Customer-specific fields
-        setCustomerPropertySize(data.customerPropertySize || '');
+        setCustomerPropertySize(data.customerPropertySize || "");
         setHasSteps(data.hasPropertySteps ?? true);
         setIsPetFriendly(data.usePetFriendlyMaterial ?? true);
         setSelectedCleaningSpecifics(data.cleaningSpecifics || []);
         setSelectedPrefTime(data.prefTime || []);
-
-    })
-    .catch((error) => {
+      })
+      .catch((error) => {
         console.error("Error fetching user profile:", error);
-
-    });
-    }, [uid]);
+      });
+  }, [uid]);
 
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
@@ -105,7 +127,7 @@ export default function EditInfoForCustomerRequest() {
   };
 
   //Checkbox options
-  
+
   const propertySizeOptions = [
     "Tiny",
     "Small",
@@ -134,7 +156,6 @@ export default function EditInfoForCustomerRequest() {
       prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
     );
   };
-
 
   //Validate values within fields
   const validateField = (key: string) => {
@@ -180,19 +201,20 @@ export default function EditInfoForCustomerRequest() {
       customerUid: uid,
       customerFName: firstName,
       customerLName: lastName,
-      email:email,
+      email: email,
       customerPhoneNumber: phoneNumber,
-      streetAddress:streetAddress,
-      city:city,
-      state:state,
-      zipCode:zipCode,
+      streetAddress: streetAddress,
+      city: city,
+      state: state,
+      zipCode: zipCode,
       customerPropertySize: customerPropertySize,
       hasPropertySteps: hasSteps,
       usePetFriendlyMaterial: isPetFriendly,
       cleaningSpecifics: selectedCleaningSpecifics,
       prefTime: selectedPrefTime,
+      image: image,
+      imageTimestamp: imageTimestamp,
     };
-
 
     console.log("Submitting Order Request:", customerOrder);
     //Sends HTTP POST request to backend api
@@ -200,7 +222,7 @@ export default function EditInfoForCustomerRequest() {
       .post(`/order/create`, customerOrder, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
-            'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       })
       .then(() => {
@@ -241,8 +263,10 @@ export default function EditInfoForCustomerRequest() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}
-      keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.scrollContainer}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.info}>
         <Text variant="headlineMedium" style={styles.title}>
           Please Confirm Your Order Request Information
@@ -278,7 +302,7 @@ export default function EditInfoForCustomerRequest() {
         <Text variant="headlineMedium">Preferences</Text>
 
         {/*Customer Preferences View */}
-        {(
+        {
           <>
             <Text variant="headlineMedium" style={styles.promptText}>
               Select Your Property Size
@@ -443,16 +467,44 @@ export default function EditInfoForCustomerRequest() {
               </Button>
             </View>
           </>
-        )}
+        }
 
         <Button
-        mode="contained"
-        onPress={() => {
-          console.log("Submit button pressed!");
-          handleOrderRequestSubmission();
-        }}
-        style={styles.signupButton}
-        >Submit Order Request</Button>
+          mode="contained"
+          onPress={takePicture}
+          style={{ marginVertical: 12 }}
+        >
+          Take a Picture
+        </Button>
+        {image ? (
+          <View style={{ alignItems: "center", marginVertical: 8 }}>
+            <Image
+              source={{ uri: image }}
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: 10,
+                marginBottom: 4,
+              }}
+            />
+            {imageTimestamp ? (
+              <Text style={{ color: '#666', fontSize: 14 }}>
+                {`Captured at: ${imageTimestamp}`}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <Button
+          mode="contained"
+          onPress={() => {
+            console.log("Submit button pressed!");
+            handleOrderRequestSubmission();
+          }}
+          style={styles.signupButton}
+        >
+          Submit Order Request
+        </Button>
       </View>
     </ScrollView>
   );
@@ -566,5 +618,10 @@ const styles = StyleSheet.create({
     color: "#B00020",
     fontSize: 12,
     marginTop: 4,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
   },
 });
