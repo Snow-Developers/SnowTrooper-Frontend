@@ -31,27 +31,27 @@ interface Order {
   streetAddress: string;
   state: string;
   zipCode: string;
+  customerUid?: string; // Add customerUid for price calculation
 }
 
 type WeatherResponse = {
-    location: {
-      name: string;
-      localtime: string;
-    };
-    current: {
-      temp_f: number;
-      humidity: number;
-      wind_mph: number;
-      condition: {
-        text: string;
-        icon: string;
-      };
+  location: {
+    name: string;
+    localtime: string;
+  };
+  current: {
+    temp_f: number;
+    humidity: number;
+    wind_mph: number;
+    condition: {
+      text: string;
+      icon: string;
     };
   };
+};
 const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
 
 export default function OrdersScreen() {
-  
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
@@ -59,7 +59,10 @@ export default function OrdersScreen() {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  const currentOrders = orders.filter((order) => order.orderStatus === "IN-PROGRESS");
+  const currentOrders = orders.filter(
+    (order) => order.orderStatus === "IN-PROGRESS"
+  );
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
       if (!user) {
@@ -93,15 +96,16 @@ export default function OrdersScreen() {
 
       setOrdersLoading(true);
       if (user) {
-        api.get(`/order/history/${user.uid}`, {
-          headers: {
-            Authorization: `Bearer ${getAPIToken()}`,
-            ...(Platform.OS !== 'web' && {
-              'Content-Type': 'application/json',
-            }),
-            "ngrok-skip-browser-warning": "11111",
-          },
-        })
+        api
+          .get(`/order/history/${user.uid}`, {
+            headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              ...(Platform.OS !== "web" && {
+                "Content-Type": "application/json",
+              }),
+              "ngrok-skip-browser-warning": "11111",
+            },
+          })
           .then((result) => {
             setOrders(result.data || []);
           })
@@ -117,8 +121,6 @@ export default function OrdersScreen() {
         setOrdersLoading(false);
       }
     });
-
-    
 
     return () => unsubscribe();
   }, []);
@@ -148,6 +150,7 @@ export default function OrdersScreen() {
         streetAddress: doc.data().streetAddress,
         state: doc.data().state,
         zipCode: doc.data().zipCode,
+        customerUid: doc.data().customerUid,
       }));
 
       setOrders(fetched);
@@ -219,7 +222,8 @@ export default function OrdersScreen() {
   }
 
   function formatTimestamp(ts: any) {
-    if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number") return null;
+    if (!ts || typeof ts !== "object" || typeof ts.seconds !== "number")
+      return null;
     const date = new Date(ts.seconds * 1000);
     return date.toLocaleString();
   }
@@ -239,10 +243,124 @@ export default function OrdersScreen() {
     }
   }
 
+  // Component for available orders 
+  function AvailableOrderCard({ order }: { order: Order }) {
+    const [earnings, setEarnings] = useState<number | null>(null);
+    const [loadingEarnings, setLoadingEarnings] = useState(true);
+
+    useEffect(() => {
+      const calculateEarnings = async () => {
+        if (!order.customerUid) {
+          console.log("No customerUid available for order:", order.orderId);
+          setLoadingEarnings(false);
+          return;
+        }
+
+        try {
+          console.log(
+            `[DEBUG] Calculating earnings for order ${order.orderId} with customerUid: ${order.customerUid}`
+          );
+
+          const response = await api.get(
+            `/order/calculate/${order.customerUid}`,
+            {
+              headers: {
+                Authorization: `Bearer ${getAPIToken()}`,
+                ...(Platform.OS !== "web" && {
+                  "Content-Type": "application/json",
+                }),
+                "ngrok-skip-browser-warning": "11111",
+              },
+            }
+          );
+
+          console.log(
+            `[DEBUG] Price calculation successful for order ${order.orderId}:`,
+            response.data
+          );
+
+          // Contractor earnings 
+          const totalPrice = response.data.Total; 
+          const contractorEarnings = Math.round(totalPrice * 0.7); // 70%, in cents
+          const earningsInDollars = contractorEarnings / 100; // in dollars
+
+          console.log(
+            `[DEBUG] Contractor earnings for order ${
+              order.orderId
+            }: $${earningsInDollars.toFixed(2)}`
+          );
+          setEarnings(earningsInDollars);
+        } catch (error) {
+          console.error(
+            `[DEBUG] Error calculating earnings for order ${order.orderId}:`,
+            error
+          );
+          setEarnings(null);
+        } finally {
+          setLoadingEarnings(false);
+        }
+      };
+
+      calculateEarnings();
+    }, [order.customerUid, order.orderId]);
+
+    return (
+      <Card key={order.orderId} style={styles.card}>
+        <Card.Content>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>📍 {order.city}</Text>
+            <View style={styles.earningsContainer}>
+              {loadingEarnings ? (
+                <ActivityIndicator size="small" color="#2ecc71" />
+              ) : earnings !== null ? (
+                <Text style={styles.earningsText}>
+                  Earn: ${earnings.toFixed(2)}
+                </Text>
+              ) : (
+                <Text style={styles.earningsError}>Price N/A</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Customer:</Text>
+            <Text style={styles.value}>
+              {order.customerFName} {order.customerLName}
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Phone:</Text>
+            <Text style={styles.value}>{order.customerPhoneNumber}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Property Size:</Text>
+            <Text style={styles.value}>{order.customerPropertySize}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Services:</Text>
+            <Text style={styles.value}>
+              {order.cleaningSpecifics.join(", ")}
+            </Text>
+          </View>
+
+          <Button
+            mode="contained"
+            onPress={() => handleClaim(order.orderId)}
+            loading={claimingOrderId === order.orderId}
+            disabled={claimingOrderId === order.orderId}
+            style={styles.claimButton}
+          >
+            {claimingOrderId === order.orderId ? "Claiming..." : "Claim Order"}
+          </Button>
+        </Card.Content>
+      </Card>
+    );
+  }
+
   function OrderCard({ order }: { order: Order }) {
     const [weather, setWeather] = React.useState<any>(null);
     const [loading, setLoading] = React.useState(true);
-  
+
     useEffect(() => {
       const fetchWeather = async () => {
         try {
@@ -260,7 +378,7 @@ export default function OrdersScreen() {
       };
       fetchWeather();
     }, [order.zipCode]);
-  
+
     return (
       <Card style={styles.orderCard}>
         <Card.Content>
@@ -285,25 +403,30 @@ export default function OrdersScreen() {
               <Text style={{ fontSize: 12, color: "#888" }}>No weather</Text>
             )}
           </View>
-  
+
           <Text style={styles.cardTitle}>Order #{order.orderId}</Text>
-          <Text style={[styles.status, { color: getStatusColor(order.orderStatus) }]}>
+          <Text
+            style={[
+              styles.status,
+              { color: getStatusColor(order.orderStatus) },
+            ]}
+          >
             Status: {order.orderStatus}
           </Text>
           <View style={styles.customerSection}>
             <Text style={styles.customerHeader}>Customer Info:</Text>
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Name:</Text>
-                  <Text style={styles.value}>
-                    {order.customerFName} {order.customerLName}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Phone:</Text>
-                  <Text style={styles.value}>{order.customerPhoneNumber}</Text>
-                </View>
-              </>
+            <>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Name:</Text>
+                <Text style={styles.value}>
+                  {order.customerFName} {order.customerLName}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Phone:</Text>
+                <Text style={styles.value}>{order.customerPhoneNumber}</Text>
+              </View>
+            </>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Address:</Text>
@@ -313,7 +436,9 @@ export default function OrdersScreen() {
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Cleaning:</Text>
-            <Text style={styles.value}>{order.cleaningSpecifics.join(", ")}</Text>
+            <Text style={styles.value}>
+              {order.cleaningSpecifics.join(", ")}
+            </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Preferred Time:</Text>
@@ -322,31 +447,39 @@ export default function OrdersScreen() {
           {order.orderPlacedTime && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Placed:</Text>
-              <Text style={styles.value}>{formatTimestamp(order.orderPlacedTime)}</Text>
+              <Text style={styles.value}>
+                {formatTimestamp(order.orderPlacedTime)}
+              </Text>
             </View>
           )}
           {order.orderFulfilledTime && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Fulfilled:</Text>
-              <Text style={styles.value}>{formatTimestamp(order.orderFulfilledTime)}</Text>
+              <Text style={styles.value}>
+                {formatTimestamp(order.orderFulfilledTime)}
+              </Text>
             </View>
           )}
-  
+
           {order.orderStatus !== "CANCELLED" && (
-              <Button
-                  mode="contained"
-                  style={styles.locationButton}
-                  labelStyle={styles.locationButtonText}
-              >Go to Address</Button>
+            <Button
+              mode="contained"
+              style={styles.locationButton}
+              labelStyle={styles.locationButtonText}
+            >
+              Go to Address
+            </Button>
           )}
-  
+
           {/*Change to use if customer is within range of location to display I'm here button*/}
           {order.orderStatus !== "CANCELLED" && (
-              <Button
-                  mode="contained"
-                  style={styles.hereButton}
-                  labelStyle={styles.locationButtonText}
-              >I&apos;m here</Button>
+            <Button
+              mode="contained"
+              style={styles.hereButton}
+              labelStyle={styles.locationButtonText}
+            >
+              I&apos;m here
+            </Button>
           )}
         </Card.Content>
       </Card>
@@ -356,76 +489,41 @@ export default function OrdersScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 120 }}>
-
-        <ViewControl
-          values={['Available Orders', 'Current Orders']}
-          selectedIndex={selectedIndex}
-          onChange={setSelectedIndex}
-          width={300}
-          height={40}
-          activeColor="#ffffff"
-          inactiveColor="#d3d3d3"
-          activeTextColor="#000"
-          textColor="#333"
-          borderRadius={20}
-          containerStyle={{ alignSelf: 'center', marginVertical: 20 }}
-        />
+      contentContainerStyle={{ paddingBottom: 120 }}
+    >
+      <ViewControl
+        values={["Available Orders", "Current Orders"]}
+        selectedIndex={selectedIndex}
+        onChange={setSelectedIndex}
+        width={300}
+        height={40}
+        activeColor="#ffffff"
+        inactiveColor="#d3d3d3"
+        activeTextColor="#000"
+        textColor="#333"
+        borderRadius={20}
+        containerStyle={{ alignSelf: "center", marginVertical: 20 }}
+      />
 
       {/* Show available orders when selectedIndex is 0 */}
       {selectedIndex === 0 && (
         <>
-        <Text style={styles.title}>Available Orders</Text>
-        <Text style={styles.subtitle}>Tap to claim an open job</Text>
+          <Text style={styles.title}>Available Orders</Text>
+          <Text style={styles.subtitle}>Tap to claim an open job</Text>
 
-        {orders.length === 0 ? (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.statusText}>
-                🚫 No available orders at the moment.
-              </Text>
-            </Card.Content>
-          </Card>
-        ) : (
-          orders.map((order) => (
-            <Card key={order.orderId} style={styles.card}>
+          {orders.length === 0 ? (
+            <Card style={styles.card}>
               <Card.Content>
-                <Text style={styles.cardTitle}>📍 {order.city}</Text>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Customer:</Text>
-                  <Text style={styles.value}>
-                    {order.customerFName} {order.customerLName}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Phone:</Text>
-                  <Text style={styles.value}>{order.customerPhoneNumber}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Property Size:</Text>
-                  <Text style={styles.value}>{order.customerPropertySize}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.label}>Services:</Text>
-                  <Text style={styles.value}>
-                    {order.cleaningSpecifics.join(", ")}
-                  </Text>
-                </View>
-
-                <Button
-                  mode="contained"
-                  onPress={() => handleClaim(order.orderId)}
-                  loading={claimingOrderId === order.orderId}
-                  disabled={claimingOrderId === order.orderId}
-                  style={styles.claimButton}
-                >
-                  {claimingOrderId === order.orderId ? "Claiming..." : "Claim Order"}
-                </Button>
+                <Text style={styles.statusText}>
+                  🚫 No available orders at the moment.
+                </Text>
               </Card.Content>
             </Card>
-          ))
-        )}
+          ) : (
+            orders.map((order) => (
+              <AvailableOrderCard key={order.orderId} order={order} />
+            ))
+          )}
         </>
       )}
 
@@ -433,7 +531,9 @@ export default function OrdersScreen() {
       {selectedIndex === 1 && (
         <>
           <Text style={styles.title}>Current Orders</Text>
-          <Text style={styles.subtitle}>Go to customer&apos;s address or say &quot;I&apos;m here&quot;</Text>
+          <Text style={styles.subtitle}>
+            Go to customer&apos;s address or say &quot;I&apos;m here&quot;
+          </Text>
           {ordersLoading ? (
             <ActivityIndicator size="large" color="#4ac1d3" />
           ) : currentOrders.length === 0 ? (
@@ -493,11 +593,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     elevation: 5,
   },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 15,
     color: "#333",
+    flex: 1,
+  },
+  earningsContainer: {
+    backgroundColor: "#e8f5e8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#2ecc71",
+  },
+  earningsText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#2ecc71",
+  },
+  earningsError: {
+    fontSize: 12,
+    color: "#e74c3c",
   },
   infoRow: {
     flexDirection: "row",
