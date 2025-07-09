@@ -1,8 +1,9 @@
 import { useStripe } from "@stripe/stripe-react-native";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View, Image } from "react-native";
+import { Image, Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   Checkbox,
@@ -65,43 +66,6 @@ export default function EditInfoForCustomerRequest() {
   const [image, setImage] = useState<string>("");
   const [imageTimestamp, setImageTimestamp] = useState<string>("");
 
-
-  //Prefill values upon render
-  useEffect(() => {
-    api
-      .get(`/users/${uid}`, {
-        headers: {
-          Authorization: `Bearer ${getAPIToken()}`,
-          ...(Platform.OS !== "web" && {
-            "Content-Type": "application/json",
-          }),
-          "ngrok-skip-browser-warning": "11111",
-        },
-      })
-      .then((response) => {
-        const data = response.data;
-        console.log("User profile data:", data);
-        setFirstName(data.firstName || "");
-        setLastName(data.lastName || "");
-        setEmail(data.email || "");
-        setPhoneNumber(data.phoneNumber || "");
-        setStreetAddress(data.streetAddress || "");
-        setCity(data.city || "");
-        setState(data.state || "");
-        setZipCode(data.zipCode || "");
-
-        // Customer-specific fields
-        setCustomerPropertySize(data.customerPropertySize || "");
-        setHasSteps(data.hasPropertySteps ?? true);
-        setIsPetFriendly(data.usePetFriendlyMaterial ?? true);
-        setSelectedCleaningSpecifics(data.cleaningSpecifics || []);
-        setSelectedPrefTime(data.prefTime || []);
-      })
-      .catch((error) => {
-        console.error("Error fetching user profile:", error);
-      });
-  }, [uid]);
-
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
     "Tiny" | "Small" | "Medium" | "Large" | "Extra Large" | ""
@@ -141,7 +105,6 @@ export default function EditInfoForCustomerRequest() {
   };
 
   //Checkbox options
-
   const propertySizeOptions = [
     "Tiny",
     "Small",
@@ -252,7 +215,7 @@ export default function EditInfoForCustomerRequest() {
     try {
       await ensureAPIAuthentication();
 
-      // Create userProfile object 
+      // Create userProfile object
       const userProfile = {
         uid,
         profilePicture: "", // leave empty for now, maybe can be a feature in the future
@@ -260,15 +223,15 @@ export default function EditInfoForCustomerRequest() {
         lastName,
         email,
         phoneNumber,
-        role: "Customer", 
+        role: "Customer",
         streetAddress,
         city,
         state,
         zipCode,
-        crewSize: "", 
-        prefPropertySizeWork: [], 
-        prefRadiusWork: "", 
-        equipments: [], 
+        crewSize: "",
+        prefPropertySizeWork: [],
+        prefRadiusWork: "",
+        equipments: [],
         customerPropertySize,
         hasPropertySteps: hasSteps,
         usePetFriendlyMaterial: isPetFriendly,
@@ -276,7 +239,7 @@ export default function EditInfoForCustomerRequest() {
         prefTime: selectedPrefTime,
       };
 
-      // Create FormData 
+      // Create FormData
       const formData = new FormData();
       formData.append("userProfile", JSON.stringify(userProfile));
 
@@ -356,7 +319,7 @@ export default function EditInfoForCustomerRequest() {
     console.log("[DEBUG] All fields validated, updating profile...");
 
     try {
-      // Update user profile 
+      // Update user profile
       await updateUserProfile();
       console.log("[DEBUG] Profile updated successfully, calculating price...");
 
@@ -754,169 +717,166 @@ export default function EditInfoForCustomerRequest() {
         <Text variant="headlineMedium">Preferences</Text>
 
         {/*Customer Preferences View */}
-        {
-          <>
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Your Property Size
-            </Text>
-            <View
-              style={{
-                paddingTop: 5,
-                flexDirection: "row",
-                justifyContent: "center",
-              }}
+        <>
+          <Text variant="headlineMedium" style={styles.promptText}>
+            Select Your Property Size
+          </Text>
+          <View
+            style={{
+              paddingTop: 5,
+              flexDirection: "row",
+              justifyContent: "center",
+            }}
+          >
+            <Menu
+              visible={propertyVisible}
+              onDismiss={closePropertyMenu}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={openPropertyMenu}
+                  style={[
+                    showErrors &&
+                      validateField("customerPropertySize") && {
+                        borderColor: "red",
+                      },
+                  ]}
+                >
+                  {customerPropertySize || "Select Property Size"}
+                </Button>
+              }
             >
-              <Menu
-                visible={propertyVisible}
-                onDismiss={closePropertyMenu}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={openPropertyMenu}
-                    style={[
-                      showErrors &&
-                        validateField("customerPropertySize") && {
-                          borderColor: "red",
-                        },
-                    ]}
-                  >
-                    {customerPropertySize || "Select Property Size"}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Tiny")}
-                  title="Tiny (0-500 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Small")}
-                  title="Small (501-1,501 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Medium")}
-                  title="Medium (1,501-3,000 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Large")}
-                  title="Large (3,001-6,000 sq ft)"
-                />
-                <Menu.Item
-                  onPress={() => handlePropertySelect("Extra Large")}
-                  title="Extra Large (6,001+ sq ft)"
-                />
-              </Menu>
-            </View>
-            {showErrors && validateField("customerPropertySize") && (
-              <HelperText type="error">Property size is required</HelperText>
-            )}
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Cleaning Specifics
-            </Text>
-            {cleaningSpecificsOptions.map((item) => (
-              <Checkbox.Item
-                key={item}
-                label={item}
-                status={
-                  selectedCleaningSpecifics.includes(item)
-                    ? "checked"
-                    : "unchecked"
-                }
-                onPress={() => toggleCleaningSpecifics(item)}
+              <Menu.Item
+                onPress={() => handlePropertySelect("Tiny")}
+                title="Tiny (0-500 sq ft)"
               />
-            ))}
-
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Select Your Preferred Time
-            </Text>
-            {showErrors && validateField("selectedPrefTime") && (
-              <HelperText type="error">
-                Select at least one preferred time
-              </HelperText>
-            )}
-            {prefTimeOptions.map((item) => (
-              <Checkbox.Item
-                key={item.key}
-                label={item.label}
-                status={
-                  selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
-                }
-                onPress={() => togglePrefTime(item.key)}
+              <Menu.Item
+                onPress={() => handlePropertySelect("Small")}
+                title="Small (501-1,501 sq ft)"
               />
-            ))}
+              <Menu.Item
+                onPress={() => handlePropertySelect("Medium")}
+                title="Medium (1,501-3,000 sq ft)"
+              />
+              <Menu.Item
+                onPress={() => handlePropertySelect("Large")}
+                title="Large (3,001-6,000 sq ft)"
+              />
+              <Menu.Item
+                onPress={() => handlePropertySelect("Extra Large")}
+                title="Extra Large (6,001+ sq ft)"
+              />
+            </Menu>
+          </View>
+          {showErrors && validateField("customerPropertySize") && (
+            <HelperText type="error">Property size is required</HelperText>
+          )}
 
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Does your property have steps?
-            </Text>
-            <View style={styles.prompts}>
-              <Button
-                mode="outlined"
-                onPress={openPropertyMenu}
-                style={[
-                  showErrors &&
-                    validateField("customerPropertySize") && {
-                      borderColor: "red",
-                    },
-                ]}
-              >
-                {customerPropertySize || "Select Property Size"}
-              </Button>
+          <Text variant="headlineMedium" style={styles.promptText}>
+            Select Cleaning Specifics
+          </Text>
+          {cleaningSpecificsOptions.map((item) => (
+            <Checkbox.Item
+              key={item}
+              label={item}
+              status={
+                selectedCleaningSpecifics.includes(item)
+                  ? "checked"
+                  : "unchecked"
+              }
+              onPress={() => toggleCleaningSpecifics(item)}
+            />
+          ))}
 
-              <Button
-                mode="outlined"
-                onPress={() => setHasSteps(false)}
-                style={[
-                  styles.infoButton,
-                  hasSteps === false && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  hasSteps === false && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                No{" "}
-              </Button>
-            </View>
+          <Text variant="headlineMedium" style={styles.promptText}>
+            Select Your Preferred Time
+          </Text>
+          {showErrors && validateField("selectedPrefTime") && (
+            <HelperText type="error">
+              Select at least one preferred time
+            </HelperText>
+          )}
+          {prefTimeOptions.map((item) => (
+            <Checkbox.Item
+              key={item.key}
+              label={item.label}
+              status={
+                selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
+              }
+              onPress={() => togglePrefTime(item.key)}
+            />
+          ))}
 
-            <Text variant="headlineMedium" style={styles.promptText}>
-              Would you like pet friendly materials used?
-            </Text>
-            <View style={styles.prompts}>
-              <Button
-                mode="outlined"
-                onPress={() => setIsPetFriendly(true)}
-                style={[
-                  styles.infoButton,
-                  isPetFriendly === true && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  isPetFriendly === true && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                Yes{" "}
-              </Button>
+          <Text variant="headlineMedium" style={styles.promptText}>
+            Does your property have steps?
+          </Text>
+          <View style={styles.prompts}>
+            <Button
+              mode="outlined"
+              onPress={() => setHasSteps(true)}
+              style={[
+                styles.infoButton,
+                hasSteps === true && styles.selectedButton,
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                hasSteps === true && styles.selectedButtonLabel,
+              ]}
+            >
+              Yes
+            </Button>
 
-              <Button
-                mode="outlined"
-                onPress={() => setIsPetFriendly(false)}
-                style={[
-                  styles.infoButton,
-                  isPetFriendly === false && styles.selectedButton,
-                ]}
-                labelStyle={[
-                  styles.buttonLabel,
-                  isPetFriendly === false && styles.selectedButtonLabel,
-                ]}
-              >
-                {" "}
-                No{" "}
-              </Button>
-            </View>
-          </>
-        }
+            <Button
+              mode="outlined"
+              onPress={() => setHasSteps(false)}
+              style={[
+                styles.infoButton,
+                hasSteps === false && styles.selectedButton,
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                hasSteps === false && styles.selectedButtonLabel,
+              ]}
+            >
+              No
+            </Button>
+          </View>
+
+          <Text variant="headlineMedium" style={styles.promptText}>
+            Would you like pet friendly materials used?
+          </Text>
+          <View style={styles.prompts}>
+            <Button
+              mode="outlined"
+              onPress={() => setIsPetFriendly(true)}
+              style={[
+                styles.infoButton,
+                isPetFriendly === true && styles.selectedButton,
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                isPetFriendly === true && styles.selectedButtonLabel,
+              ]}
+            >
+              Yes
+            </Button>
+
+            <Button
+              mode="outlined"
+              onPress={() => setIsPetFriendly(false)}
+              style={[
+                styles.infoButton,
+                isPetFriendly === false && styles.selectedButton,
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                isPetFriendly === false && styles.selectedButtonLabel,
+              ]}
+            >
+              No
+            </Button>
+          </View>
+        </>
 
         <Button
           mode="contained"
@@ -937,22 +897,77 @@ export default function EditInfoForCustomerRequest() {
               }}
             />
             {imageTimestamp ? (
-              <Text style={{ color: '#666', fontSize: 14 }}>
+              <Text style={{ color: "#666", fontSize: 14 }}>
                 {`Captured at: ${imageTimestamp}`}
               </Text>
             ) : null}
           </View>
         ) : null}
 
+        {/* Show price and payment section if available */}
+        {showPriceAndPayment && calculatedPrice && (
+          <View style={styles.priceSection}>
+            <Text variant="headlineSmall" style={styles.priceTitle}>
+              Order Summary
+            </Text>
+            <View style={styles.priceBreakdown}>
+              <Text style={styles.priceItem}>
+                Base Price: ${calculatedPrice.basePrice?.toFixed(2) || "0.00"}
+              </Text>
+              <Text style={styles.priceItem}>
+                Weather Multiplier: {calculatedPrice.weatherMultiplier || 1}x
+              </Text>
+              <Text style={styles.priceItem}>
+                Property Size: {customerPropertySize}
+              </Text>
+              {selectedCleaningSpecifics.length > 0 && (
+                <Text style={styles.priceItem}>
+                  Additional Services: {selectedCleaningSpecifics.join(", ")}
+                </Text>
+              )}
+            </View>
+            <Text style={styles.priceTotal}>
+              Total: ${calculatedPrice.totalPrice?.toFixed(2) || "0.00"}
+            </Text>
+          </View>
+        )}
+
+        {/* Show different buttons based on state */}
+        {!showPriceAndPayment ? (
+          <Button
+            mode="contained"
+            onPress={handleProceedToPayment}
+            style={styles.signupButton}
+            loading={isUpdatingProfile || isCalculatingPrice}
+            disabled={isUpdatingProfile || isCalculatingPrice}
+          >
+            {isUpdatingProfile
+              ? "Updating Profile..."
+              : isCalculatingPrice
+              ? "Calculating Price..."
+              : "Proceed to Payment"}
+          </Button>
+        ) : (
+          <Button
+            mode="contained"
+            onPress={handleStripePayment}
+            style={styles.signupButton}
+            loading={isProcessingPayment}
+            disabled={isProcessingPayment}
+          >
+            {isProcessingPayment ? "Processing Payment..." : "Pay Now"}
+          </Button>
+        )}
+
         <Button
-          mode="contained"
+          mode="outlined"
           onPress={() => {
             console.log("Submit button pressed!");
             handleOrderRequestSubmission();
           }}
-          style={styles.signupButton}
+          style={[styles.signupButton, { marginTop: 10 }]}
         >
-          Submit Order Request
+          Submit Order Request (Without Payment)
         </Button>
       </View>
     </ScrollView>
