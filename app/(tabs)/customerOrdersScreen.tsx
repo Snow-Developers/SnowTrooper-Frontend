@@ -1,4 +1,5 @@
 import api, { getAPIToken } from "@/services/api";
+import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ type Order = {
   city: string;
   state: string;
   zipCode: string;
+  hasArrived: boolean;
 };
 
 interface DriverLocation {
@@ -423,6 +425,27 @@ function OrderCard({
                   </Text>
                 </View>
               )}
+              <Button
+                mode="contained"
+                disabled={!order.hasArrived}
+                onPress={async () => {
+                  try {
+                    alert("Viewing Before Photo");
+                    //console.log("Order ID:", order.orderId);
+                    const id = order.orderId;
+                    router.push({
+                      pathname: '/customerBeforePhotoVerification',
+                      params: { orderId: id },
+                    });
+                    } catch (e) {
+                      console.error("Failed to update order:", e);
+                      alert("Failed to mark arrival.");
+                    }
+                }}
+                  style={{ marginTop: 20 }}
+                    >
+                      Contractor Arrived, View Before Photo
+              </Button>
               {order.orderStatus === "IN-PROGRESS" && (
                 <Button
                   mode="contained"

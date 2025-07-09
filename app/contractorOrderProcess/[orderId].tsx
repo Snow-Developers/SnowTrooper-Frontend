@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { getAuth } from "firebase/auth";
 import {
   doc,
@@ -34,6 +34,8 @@ export default function ContractorOrderProcess() {
   const [nativeWatcher, setNativeWatcher] = useState<any>(null);
   const [webWatchId, setWebWatchId] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(false);
+  //const [hasArrived, setHasArrived] = useState(false);
+  const {hasArrived, setHasArrived} = useLocalSearchParams();
 
   const user = getAuth().currentUser;
   const driverId = user?.uid || "driver_123";
@@ -223,8 +225,12 @@ export default function ContractorOrderProcess() {
         onPress={async () => {
           try {
             const orderRef = doc(db, "orders", orderId as string);
-            await updateDoc(orderRef, { orderStatus: "ARRIVED" });
+            await updateDoc(orderRef, { hasArrived: true });
             alert("Marked as arrived!");
+            router.push({
+              pathname: '/contractorOrderProcess/contractorBeforePhotoVerification',
+              params: { orderId }
+          });
           } catch (e) {
             console.error("Failed to update order:", e);
             alert("Failed to mark arrival.");
@@ -232,7 +238,27 @@ export default function ContractorOrderProcess() {
         }}
         style={{ marginTop: 20 }}
       >
-        I'm here, submit before photo
+        I'm Here, Submit Before Photo
+      </Button>
+
+      <Button
+        mode="contained"
+        disabled={!hasArrived}
+        onPress={async () => {
+          try {
+            alert("Finishing Service!");
+            router.push({
+              pathname: '/contractorOrderProcess/contractorAfterPhotoVerification',
+              params: { orderId }
+          });
+          } catch (e) {
+            console.error("Failed to finish service:", e);
+            alert("Failed to finish service.");
+          }
+        }}
+        style={{ marginTop: 20 }}
+      >
+        Finish Service
       </Button>
 
       {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
