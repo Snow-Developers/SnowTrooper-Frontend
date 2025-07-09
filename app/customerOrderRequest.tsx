@@ -325,13 +325,19 @@ export default function EditInfoForCustomerRequest() {
 
       // Calculate the price
       const priceData = await calculateOrderPrice();
+      console.log("[DEBUG] Price data received:", priceData);
+      console.log("[DEBUG] Price data type:", typeof priceData);
+      console.log("[DEBUG] Price data stringified:", JSON.stringify(priceData));
+
       if (!priceData) {
+        console.log("[DEBUG] No price data returned, stopping here");
         return;
       }
 
       // Show price and payment button
       setShowPriceAndPayment(true);
-      console.log("[DEBUG] Price calculated, showing payment options");
+      console.log("[DEBUG] showPriceAndPayment set to true");
+      console.log("[DEBUG] calculatedPrice state:", calculatedPrice);
     } catch (error) {
       console.error("[DEBUG] Error during proceed to payment:", error);
       alert("Failed to update profile. Please try again.");
@@ -912,10 +918,16 @@ export default function EditInfoForCustomerRequest() {
             </Text>
             <View style={styles.priceBreakdown}>
               <Text style={styles.priceItem}>
-                Base Price: ${calculatedPrice.basePrice?.toFixed(2) || "0.00"}
+                Base Rate: ${(calculatedPrice["Base Rate"] || 0).toFixed(2)}
               </Text>
               <Text style={styles.priceItem}>
-                Weather Multiplier: {calculatedPrice.weatherMultiplier || 1}x
+                Size Factor: {calculatedPrice["Size Factor"] || 1}x
+              </Text>
+              <Text style={styles.priceItem}>
+                Snowfall Multiplier: {calculatedPrice["Snowfall Total"] || 1}x
+              </Text>
+              <Text style={styles.priceItem}>
+                Location Factor: {calculatedPrice["Location Factor"] || 1}x
               </Text>
               <Text style={styles.priceItem}>
                 Property Size: {customerPropertySize}
@@ -927,7 +939,7 @@ export default function EditInfoForCustomerRequest() {
               )}
             </View>
             <Text style={styles.priceTotal}>
-              Total: ${calculatedPrice.totalPrice?.toFixed(2) || "0.00"}
+              Total: ${((calculatedPrice["Total"] || 0) / 100).toFixed(2)}
             </Text>
           </View>
         )}
@@ -958,17 +970,6 @@ export default function EditInfoForCustomerRequest() {
             {isProcessingPayment ? "Processing Payment..." : "Pay Now"}
           </Button>
         )}
-
-        <Button
-          mode="outlined"
-          onPress={() => {
-            console.log("Submit button pressed!");
-            handleOrderRequestSubmission();
-          }}
-          style={[styles.signupButton, { marginTop: 10 }]}
-        >
-          Submit Order Request (Without Payment)
-        </Button>
       </View>
     </ScrollView>
   );
