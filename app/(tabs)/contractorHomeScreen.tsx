@@ -315,11 +315,11 @@ function OrderCard({ order }: { order: Order }) {
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Cleaning:</Text>
-          <Text style={styles.value}>{order.cleaningSpecifics.join(", ")}</Text>
+          <Text style={styles.value}>{(order.cleaningSpecifics) ? order.cleaningSpecifics.join(", ") : "N/A"}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Preferred Time:</Text>
-          <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+          <Text style={styles.value}>{(order.prefTime) ? order.prefTime.join(", ") : "N/A"}</Text>
         </View>
         {order.orderPlacedTime && (
           <View style={styles.infoRow}>

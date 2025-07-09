@@ -339,7 +339,7 @@ export default function OrdersScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Services:</Text>
             <Text style={styles.value}>
-              {order.cleaningSpecifics.join(", ")}
+              {(order.cleaningSpecifics ?? []).join(", ")}
             </Text>
           </View>
 
@@ -437,12 +437,12 @@ export default function OrdersScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Cleaning:</Text>
             <Text style={styles.value}>
-              {order.cleaningSpecifics.join(", ")}
+              {(order.cleaningSpecifics ?? []).join(", ")}
             </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Preferred Time:</Text>
-            <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+            <Text style={styles.value}>{(order.prefTime ?? []).join(", ")}</Text>
           </View>
           {order.orderPlacedTime && (
             <View style={styles.infoRow}>
