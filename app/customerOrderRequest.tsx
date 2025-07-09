@@ -1,8 +1,8 @@
 import { useStripe } from "@stripe/stripe-react-native";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Image, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   Checkbox,
@@ -13,7 +13,16 @@ import {
 } from "react-native-paper";
 import api, { ensureAPIAuthentication, getAPIToken } from "../services/api";
 
+
 export default function EditInfoForCustomerRequest() {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
   //Stripe hook
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
@@ -32,6 +41,26 @@ export default function EditInfoForCustomerRequest() {
     "selectedPrefTime",
   ];
 
+  // Function to take a picture using the camera
+  const takePicture = async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cameraPermission.granted) {
+      alert("Camera permission is required!");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+      exif: true,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      setImage(result.assets[0].uri ?? "");
+      const timestamp = new Date().toLocaleString(); // Get current timestamp
+      setImageTimestamp(timestamp);
+      console.log("Image captured at:", timestamp);
+    }
+  };
+
   //General user info
   const [uid] = useState(getAuth().currentUser?.uid || "");
   const [firstName, setFirstName] = useState("");
@@ -44,6 +73,43 @@ export default function EditInfoForCustomerRequest() {
   const [zipCode, setZipCode] = useState("");
   const [image, setImage] = useState<string>("");
   const [imageTimestamp, setImageTimestamp] = useState<string>("");
+
+
+  //Prefill values upon render
+  useEffect(() => {
+    api
+      .get(`/users/${uid}`, {
+        headers: {
+          Authorization: `Bearer ${getAPIToken()}`,
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
+          "ngrok-skip-browser-warning": "11111",
+        },
+      })
+      .then((response) => {
+        const data = response.data;
+        console.log("User profile data:", data);
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+        setEmail(data.email || "");
+        setPhoneNumber(data.phoneNumber || "");
+        setStreetAddress(data.streetAddress || "");
+        setCity(data.city || "");
+        setState(data.state || "");
+        setZipCode(data.zipCode || "");
+
+        // Customer-specific fields
+        setCustomerPropertySize(data.customerPropertySize || "");
+        setHasSteps(data.hasPropertySteps ?? true);
+        setIsPetFriendly(data.usePetFriendlyMaterial ?? true);
+        setSelectedCleaningSpecifics(data.cleaningSpecifics || []);
+        setSelectedPrefTime(data.prefTime || []);
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+      });
+  }, [uid]);
 
   //Customer details
   const [customerPropertySize, setCustomerPropertySize] = useState<
@@ -84,6 +150,14 @@ export default function EditInfoForCustomerRequest() {
   };
 
   //Checkbox options
+
+  const propertySizeOptions = [
+    "Tiny",
+    "Small",
+    "Medium",
+    "Large",
+    "Extra Large",
+  ];
   const cleaningSpecificsOptions = ["Snow Removal", "Salting"];
   const prefTimeOptions = [
     { key: "Overnight", label: "Overnight (12:00 AM - 5:00 AM)" },
@@ -651,7 +725,9 @@ export default function EditInfoForCustomerRequest() {
     <ScrollView
       contentContainerStyle={styles.scrollContainer}
       keyboardShouldPersistTaps="handled"
-    >
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/> 
+    }>
       <View style={styles.info}>
         <Text variant="headlineMedium" style={styles.title}>
           Please Confirm Your Order Request Information
@@ -688,21 +764,102 @@ export default function EditInfoForCustomerRequest() {
 
         <Text variant="headlineMedium">Preferences</Text>
 
-        {/* Property Size Selection */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Your Property Size
-        </Text>
-        <View
-          style={{
-            paddingTop: 5,
-            flexDirection: "row",
-            justifyContent: "center",
-          }}
-        >
-          <Menu
-            visible={propertyVisible}
-            onDismiss={closePropertyMenu}
-            anchor={
+        {/*Customer Preferences View */}
+        {
+          <>
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Your Property Size
+            </Text>
+            <View
+              style={{
+                paddingTop: 5,
+                flexDirection: "row",
+                justifyContent: "center",
+              }}
+            >
+              <Menu
+                visible={propertyVisible}
+                onDismiss={closePropertyMenu}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={openPropertyMenu}
+                    style={[
+                      showErrors &&
+                        validateField("customerPropertySize") && {
+                          borderColor: "red",
+                        },
+                    ]}
+                  >
+                    {customerPropertySize || "Select Property Size"}
+                  </Button>
+                }
+              >
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Tiny")}
+                  title="Tiny (0-500 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Small")}
+                  title="Small (501-1,501 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Medium")}
+                  title="Medium (1,501-3,000 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Large")}
+                  title="Large (3,001-6,000 sq ft)"
+                />
+                <Menu.Item
+                  onPress={() => handlePropertySelect("Extra Large")}
+                  title="Extra Large (6,001+ sq ft)"
+                />
+              </Menu>
+            </View>
+            {showErrors && validateField("customerPropertySize") && (
+              <HelperText type="error">Property size is required</HelperText>
+            )}
+
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Cleaning Specifics
+            </Text>
+            {cleaningSpecificsOptions.map((item) => (
+              <Checkbox.Item
+                key={item}
+                label={item}
+                status={
+                  selectedCleaningSpecifics.includes(item)
+                    ? "checked"
+                    : "unchecked"
+                }
+                onPress={() => toggleCleaningSpecifics(item)}
+              />
+            ))}
+
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Your Preferred Time
+            </Text>
+            {showErrors && validateField("selectedPrefTime") && (
+              <HelperText type="error">
+                Select at least one preferred time
+              </HelperText>
+            )}
+            {prefTimeOptions.map((item) => (
+              <Checkbox.Item
+                key={item.key}
+                label={item.label}
+                status={
+                  selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
+                }
+                onPress={() => togglePrefTime(item.key)}
+              />
+            ))}
+
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Does your property have steps?
+            </Text>
+            <View style={styles.prompts}>
               <Button
                 mode="outlined"
                 onPress={openPropertyMenu}
@@ -715,209 +872,99 @@ export default function EditInfoForCustomerRequest() {
               >
                 {customerPropertySize || "Select Property Size"}
               </Button>
-            }
-          >
-            <Menu.Item
-              onPress={() => handlePropertySelect("Tiny")}
-              title="Tiny (0-500 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Small")}
-              title="Small (501-1,501 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Medium")}
-              title="Medium (1,501-3,000 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Large")}
-              title="Large (3,001-6,000 sq ft)"
-            />
-            <Menu.Item
-              onPress={() => handlePropertySelect("Extra Large")}
-              title="Extra Large (6,001+ sq ft)"
-            />
-          </Menu>
-        </View>
-        {showErrors && validateField("customerPropertySize") && (
-          <HelperText type="error">Property size is required</HelperText>
-        )}
 
-        {/* Cleaning Specifics */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Cleaning Specifics
-        </Text>
-        {cleaningSpecificsOptions.map((item) => (
-          <Checkbox.Item
-            key={item}
-            label={item}
-            status={
-              selectedCleaningSpecifics.includes(item) ? "checked" : "unchecked"
-            }
-            onPress={() => toggleCleaningSpecifics(item)}
-          />
-        ))}
+              <Button
+                mode="outlined"
+                onPress={() => setHasSteps(false)}
+                style={[
+                  styles.infoButton,
+                  hasSteps === false && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  hasSteps === false && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                No{" "}
+              </Button>
+            </View>
 
-        {/* Preferred Time */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Your Preferred Time
-        </Text>
-        {showErrors && validateField("selectedPrefTime") && (
-          <HelperText type="error">
-            Select at least one preferred time
-          </HelperText>
-        )}
-        {prefTimeOptions.map((item) => (
-          <Checkbox.Item
-            key={item.key}
-            label={item.label}
-            status={
-              selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
-            }
-            onPress={() => togglePrefTime(item.key)}
-          />
-        ))}
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Would you like pet friendly materials used?
+            </Text>
+            <View style={styles.prompts}>
+              <Button
+                mode="outlined"
+                onPress={() => setIsPetFriendly(true)}
+                style={[
+                  styles.infoButton,
+                  isPetFriendly === true && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  isPetFriendly === true && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                Yes{" "}
+              </Button>
 
-        {/* Property Steps */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Does your property have steps?
-        </Text>
-        <View style={styles.prompts}>
-          <Button
-            mode="outlined"
-            onPress={() => setHasSteps(true)}
-            style={[
-              styles.infoButton,
-              hasSteps === true && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              hasSteps === true && styles.selectedButtonLabel,
-            ]}
-          >
-            Yes
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => setHasSteps(false)}
-            style={[
-              styles.infoButton,
-              hasSteps === false && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              hasSteps === false && styles.selectedButtonLabel,
-            ]}
-          >
-            No
-          </Button>
-        </View>
-
-        {/* Pet Friendly Materials */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Would you like pet friendly materials used?
-        </Text>
-        <View style={styles.prompts}>
-          <Button
-            mode="outlined"
-            onPress={() => setIsPetFriendly(true)}
-            style={[
-              styles.infoButton,
-              isPetFriendly === true && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              isPetFriendly === true && styles.selectedButtonLabel,
-            ]}
-          >
-            Yes
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => setIsPetFriendly(false)}
-            style={[
-              styles.infoButton,
-              isPetFriendly === false && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              isPetFriendly === false && styles.selectedButtonLabel,
-            ]}
-          >
-            No
-          </Button>
-        </View>
-
-        {/* Main Action Button */}
-        {!showPriceAndPayment ? (
-          <Button
-            mode="contained"
-            onPress={handleProceedToPayment}
-            disabled={
-              !canProceedToPayment() || isUpdatingProfile || isCalculatingPrice
-            }
-            loading={isUpdatingProfile || isCalculatingPrice}
-            style={[styles.signupButton, { marginTop: 20, marginBottom: 10 }]}
-          >
-            {isUpdatingProfile
-              ? "Updating Profile..."
-              : isCalculatingPrice
-              ? "Calculating Price..."
-              : "Proceed to Payment"}
-          </Button>
-        ) : (
-          <>
-            {/* Price Display Section */}
-            {calculatedPrice && (
-              <View style={styles.priceSection}>
-                <Text variant="headlineMedium" style={styles.priceTitle}>
-                  Order Summary
-                </Text>
-                <View style={styles.priceBreakdown}>
-                  <Text style={styles.priceItem}>
-                    Base Rate: $
-                    {calculatedPrice["Base Rate"]?.toFixed(2) || "0.00"}
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Size Factor: {calculatedPrice["Size Factor"]}x
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Location Factor: {calculatedPrice["Location Factor"]}x
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Snowfall Factor: {calculatedPrice["Snowfall Total"]}x
-                  </Text>
-                  <Text style={styles.priceTotal}>
-                    Total: ${(calculatedPrice["Total"] / 100).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Stripe Payment Button */}
-            <Button
-              mode="contained"
-              onPress={handleStripePayment}
-              disabled={isProcessingPayment}
-              loading={isProcessingPayment}
-              style={[styles.signupButton, { marginBottom: 10 }]}
-            >
-              {isProcessingPayment
-                ? "Processing Payment..."
-                : "Continue with Stripe"}
-            </Button>
-
-            {/* Back button to modify order */}
-            <Button
-              mode="outlined"
-              onPress={() => setShowPriceAndPayment(false)}
-              disabled={isProcessingPayment}
-              style={[styles.signupButton, { marginBottom: 10 }]}
-            >
-              Modify Order Details
-            </Button>
+              <Button
+                mode="outlined"
+                onPress={() => setIsPetFriendly(false)}
+                style={[
+                  styles.infoButton,
+                  isPetFriendly === false && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  isPetFriendly === false && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                No{" "}
+              </Button>
+            </View>
           </>
-        )}
+        }
+
+        <Button
+          mode="contained"
+          onPress={takePicture}
+          style={{ marginVertical: 12 }}
+        >
+          Take a Picture
+        </Button>
+        {image ? (
+          <View style={{ alignItems: "center", marginVertical: 8 }}>
+            <Image
+              source={{ uri: image }}
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: 10,
+                marginBottom: 4,
+              }}
+            />
+            {imageTimestamp ? (
+              <Text style={{ color: '#666', fontSize: 14 }}>
+                {`Captured at: ${imageTimestamp}`}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <Button
+          mode="contained"
+          onPress={() => {
+            console.log("Submit button pressed!");
+            handleOrderRequestSubmission();
+          }}
+          style={styles.signupButton}
+        >
+          Submit Order Request
+        </Button>
       </View>
     </ScrollView>
   );
