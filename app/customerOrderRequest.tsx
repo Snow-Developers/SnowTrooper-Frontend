@@ -11,9 +11,7 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
-import * as ImagePicker from "expo-image-picker";
-
-import api, { getAPIToken } from "../services/api";
+import api, { ensureAPIAuthentication, getAPIToken } from "../services/api";
 
 export default function EditInfoForCustomerRequest() {
   //Stripe hook
@@ -639,13 +637,19 @@ export default function EditInfoForCustomerRequest() {
       imageTimestamp: imageTimestamp,
     };
 
-    console.log("Submitting Order Request:", customerOrder);
-    //Sends HTTP POST request to backend api
-    api
-      .post(`/order/create`, customerOrder, {
+    const orderRequest = {
+      paymentIntent: orderPaymentIntentId,
+      order: orderData,
+    };
+
+    try {
+      const response = await api.post(`/order/create`, orderRequest, {
         headers: {
           Authorization: `Bearer ${getAPIToken()}`,
-          "Content-Type": "application/json",
+          ...(Platform.OS !== "web" && {
+            "Content-Type": "application/json",
+          }),
+          "ngrok-skip-browser-warning": "11111",
         },
       })
       .then(() => {
@@ -788,179 +792,111 @@ export default function EditInfoForCustomerRequest() {
               <HelperText type="error">Property size is required</HelperText>
             )}
 
-        {/* Cleaning Specifics */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Cleaning Specifics
-        </Text>
-        {cleaningSpecificsOptions.map((item) => (
-          <Checkbox.Item
-            key={item}
-            label={item}
-            status={
-              selectedCleaningSpecifics.includes(item) ? "checked" : "unchecked"
-            }
-            onPress={() => toggleCleaningSpecifics(item)}
-          />
-        ))}
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Cleaning Specifics
+            </Text>
+            {cleaningSpecificsOptions.map((item) => (
+              <Checkbox.Item
+                key={item}
+                label={item}
+                status={
+                  selectedCleaningSpecifics.includes(item)
+                    ? "checked"
+                    : "unchecked"
+                }
+                onPress={() => toggleCleaningSpecifics(item)}
+              />
+            ))}
 
-        {/* Preferred Time */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Select Your Preferred Time
-        </Text>
-        {showErrors && validateField("selectedPrefTime") && (
-          <HelperText type="error">
-            Select at least one preferred time
-          </HelperText>
-        )}
-        {prefTimeOptions.map((item) => (
-          <Checkbox.Item
-            key={item.key}
-            label={item.label}
-            status={
-              selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
-            }
-            onPress={() => togglePrefTime(item.key)}
-          />
-        ))}
-
-        {/* Property Steps */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Does your property have steps?
-        </Text>
-        <View style={styles.prompts}>
-          <Button
-            mode="outlined"
-            onPress={() => setHasSteps(true)}
-            style={[
-              styles.infoButton,
-              hasSteps === true && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              hasSteps === true && styles.selectedButtonLabel,
-            ]}
-          >
-            Yes
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => setHasSteps(false)}
-            style={[
-              styles.infoButton,
-              hasSteps === false && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              hasSteps === false && styles.selectedButtonLabel,
-            ]}
-          >
-            No
-          </Button>
-        </View>
-
-        {/* Pet Friendly Materials */}
-        <Text variant="headlineMedium" style={styles.promptText}>
-          Would you like pet friendly materials used?
-        </Text>
-        <View style={styles.prompts}>
-          <Button
-            mode="outlined"
-            onPress={() => setIsPetFriendly(true)}
-            style={[
-              styles.infoButton,
-              isPetFriendly === true && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              isPetFriendly === true && styles.selectedButtonLabel,
-            ]}
-          >
-            Yes
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => setIsPetFriendly(false)}
-            style={[
-              styles.infoButton,
-              isPetFriendly === false && styles.selectedButton,
-            ]}
-            labelStyle={[
-              styles.buttonLabel,
-              isPetFriendly === false && styles.selectedButtonLabel,
-            ]}
-          >
-            No
-          </Button>
-        </View>
-
-        {/* Main Action Button */}
-        {!showPriceAndPayment ? (
-          <Button
-            mode="contained"
-            onPress={handleProceedToPayment}
-            disabled={
-              !canProceedToPayment() || isUpdatingProfile || isCalculatingPrice
-            }
-            loading={isUpdatingProfile || isCalculatingPrice}
-            style={[styles.signupButton, { marginTop: 20, marginBottom: 10 }]}
-          >
-            {isUpdatingProfile
-              ? "Updating Profile..."
-              : isCalculatingPrice
-              ? "Calculating Price..."
-              : "Proceed to Payment"}
-          </Button>
-        ) : (
-          <>
-            {/* Price Display Section */}
-            {calculatedPrice && (
-              <View style={styles.priceSection}>
-                <Text variant="headlineMedium" style={styles.priceTitle}>
-                  Order Summary
-                </Text>
-                <View style={styles.priceBreakdown}>
-                  <Text style={styles.priceItem}>
-                    Base Rate: $
-                    {calculatedPrice["Base Rate"]?.toFixed(2) || "0.00"}
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Size Factor: {calculatedPrice["Size Factor"]}x
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Location Factor: {calculatedPrice["Location Factor"]}x
-                  </Text>
-                  <Text style={styles.priceItem}>
-                    Snowfall Factor: {calculatedPrice["Snowfall Total"]}x
-                  </Text>
-                  <Text style={styles.priceTotal}>
-                    Total: ${(calculatedPrice["Total"] / 100).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Select Your Preferred Time
+            </Text>
+            {showErrors && validateField("selectedPrefTime") && (
+              <HelperText type="error">
+                Select at least one preferred time
+              </HelperText>
             )}
+            {prefTimeOptions.map((item) => (
+              <Checkbox.Item
+                key={item.key}
+                label={item.label}
+                status={
+                  selectedPrefTime.includes(item.key) ? "checked" : "unchecked"
+                }
+                onPress={() => togglePrefTime(item.key)}
+              />
+            ))}
 
-            {/* Stripe Payment Button */}
-            <Button
-              mode="contained"
-              onPress={handleStripePayment}
-              disabled={isProcessingPayment}
-              loading={isProcessingPayment}
-              style={[styles.signupButton, { marginBottom: 10 }]}
-            >
-              {isProcessingPayment
-                ? "Processing Payment..."
-                : "Continue with Stripe"}
-            </Button>
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Does your property have steps?
+            </Text>
+            <View style={styles.prompts}>
+              <Button
+                mode="outlined"
+                onPress={openPropertyMenu}
+                style={[
+                  showErrors &&
+                    validateField("customerPropertySize") && {
+                      borderColor: "red",
+                    },
+                ]}
+              >
+                {customerPropertySize || "Select Property Size"}
+              </Button>
 
-            {/* Back button to modify order */}
-            <Button
-              mode="outlined"
-              onPress={() => setShowPriceAndPayment(false)}
-              disabled={isProcessingPayment}
-              style={[styles.signupButton, { marginBottom: 10 }]}
-            >
-              Modify Order Details
-            </Button>
+              <Button
+                mode="outlined"
+                onPress={() => setHasSteps(false)}
+                style={[
+                  styles.infoButton,
+                  hasSteps === false && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  hasSteps === false && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                No{" "}
+              </Button>
+            </View>
+
+            <Text variant="headlineMedium" style={styles.promptText}>
+              Would you like pet friendly materials used?
+            </Text>
+            <View style={styles.prompts}>
+              <Button
+                mode="outlined"
+                onPress={() => setIsPetFriendly(true)}
+                style={[
+                  styles.infoButton,
+                  isPetFriendly === true && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  isPetFriendly === true && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                Yes{" "}
+              </Button>
+
+              <Button
+                mode="outlined"
+                onPress={() => setIsPetFriendly(false)}
+                style={[
+                  styles.infoButton,
+                  isPetFriendly === false && styles.selectedButton,
+                ]}
+                labelStyle={[
+                  styles.buttonLabel,
+                  isPetFriendly === false && styles.selectedButtonLabel,
+                ]}
+              >
+                {" "}
+                No{" "}
+              </Button>
+            </View>
           </>
         }
 

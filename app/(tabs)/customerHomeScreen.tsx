@@ -287,13 +287,17 @@ function OrderCard({ order }: { order: Order }) {
         <View style={styles.infoRow}>
           <Text style={styles.label}>Cleaning:</Text>
           <Text style={styles.value}>
-            {order.cleaningSpecifics?.join(", ") || "None"}
+            {order.cleaningSpecifics && Array.isArray(order.cleaningSpecifics)
+              ? order.cleaningSpecifics.join(", ")
+              : "None"}
           </Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Preferred Time:</Text>
           <Text style={styles.value}>
-            {order.prefTime?.join(", ") || "Not specified"}
+            {order.prefTime && Array.isArray(order.prefTime)
+              ? order.prefTime.join(", ")
+              : "Not specified"}
           </Text>
         </View>
         {order.orderPlacedTime && (
