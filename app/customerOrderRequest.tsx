@@ -2,8 +2,8 @@ import { useStripe } from "@stripe/stripe-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { Image, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Image, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   Checkbox,
@@ -14,7 +14,16 @@ import {
 } from "react-native-paper";
 import api, { ensureAPIAuthentication, getAPIToken } from "../services/api";
 
+
 export default function EditInfoForCustomerRequest() {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
   //Stripe hook
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
@@ -623,32 +632,14 @@ export default function EditInfoForCustomerRequest() {
           }),
           "ngrok-skip-browser-warning": "11111",
         },
+      })
+      .then(() => {
+        console.log("Snow Removal Request has been updated successfully");
+        router.replace("/customerHomeScreen");
+      })
+      .catch((error) => {
+        console.log("Response Data:", error);
       });
-
-      console.log("[DEBUG] Order created successfully:", response.data);
-
-      const { orderId, message } = response.data;
-      alert(`${message}\nOrder ID: ${orderId}`);
-
-      router.replace("/customerHomeScreen");
-    } catch (error) {
-      console.error("[DEBUG] Order submission error:", error);
-
-      if (error.response?.status === 500) {
-        alert(
-          "Server error occurred while creating order. Payment was successful but order creation failed. Please contact support."
-        );
-      } else if (error.response?.status === 465) {
-        alert(
-          "Payment verification failed. Please contact support with payment intent: " +
-            orderPaymentIntentId
-        );
-      } else {
-        alert(
-          "Order creation failed. Payment was successful but order could not be saved. Please contact support."
-        );
-      }
-    }
   };
 
   // Validation function for payment button
@@ -688,7 +679,9 @@ export default function EditInfoForCustomerRequest() {
     <ScrollView
       contentContainerStyle={styles.scrollContainer}
       keyboardShouldPersistTaps="handled"
-    >
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/> 
+    }>
       <View style={styles.info}>
         <Text variant="headlineMedium" style={styles.title}>
           Confirm Order Information
@@ -1039,36 +1032,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: 8,
   },
-  priceSection: {
-    marginVertical: 20,
-    padding: 15,
-    backgroundColor: "#f0f8ff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#00bedc",
-  },
-  priceTitle: {
-    textAlign: "center",
-    marginBottom: 10,
-    color: "#00bedc",
-  },
-  priceBreakdown: {
-    gap: 5,
-  },
-  priceItem: {
-    fontSize: 16,
-    color: "#333",
-  },
-  priceTotal: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#00bedc",
-    marginTop: 10,
-    textAlign: "center",
-  },
-  debugButton: {
-    paddingHorizontal: 10,
-    marginBottom: 5,
+  errorText: {
+    color: "#B00020",
+    fontSize: 12,
+    marginTop: 4,
   },
   image: {
     width: 100,

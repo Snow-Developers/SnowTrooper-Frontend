@@ -1,4 +1,5 @@
 import api, { getAPIToken } from "@/services/api";
+import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ type Order = {
   city: string;
   state: string;
   zipCode: string;
+  hasArrived: boolean;
 };
 
 interface DriverLocation {
@@ -423,6 +425,48 @@ function OrderCard({
                   </Text>
                 </View>
               )}
+              <Button
+                mode="contained"
+                disabled={!order.hasArrived || order.orderStatus === "COMPLETED"}
+                onPress={async () => {
+                  try {
+                    alert("Viewing Before Photo");
+                    //console.log("Order ID:", order.orderId);
+                    const id = order.orderId;
+                    router.push({
+                      pathname: '/customerBeforePhotoVerification',
+                      params: { orderId: id },
+                    });
+                    } catch (e) {
+                      console.error("Failed to go to Before Photo Verification:", e);
+                      alert("Failed to go to Before Photo Verification.");
+                    }
+                }}
+                  style={{ marginTop: 20 }}
+                    >
+                      Contractor Arrived, View Before Photo
+              </Button>
+              <Button
+                mode="contained"
+                disabled={!(order.orderStatus === "COMPLETED")}
+                onPress={async () => {
+                  try {
+                    alert("Viewing Before and After Photo");
+                    //console.log("Order ID:", order.orderId);
+                    const id = order.orderId;
+                    router.push({
+                      pathname: '/customerCompletedServicePhotoVerification',
+                      params: { orderId: id },
+                    });
+                    } catch (e) {
+                      console.error("Failed to go to completed service verification:", e);
+                      alert("Failed to go to Completed Service Photo Verification.");
+                    }
+                }}
+                  style={{ marginTop: 20 }}
+                    >
+                      Service Finished! View Before and After Photo
+              </Button>
               {order.orderStatus === "IN-PROGRESS" && (
                 <Button
                   mode="contained"

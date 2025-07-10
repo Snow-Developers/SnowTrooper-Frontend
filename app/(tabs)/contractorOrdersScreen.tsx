@@ -32,6 +32,9 @@ interface Order {
   state: string;
   zipCode: string;
   customerUid?: string; // Add customerUid for price calculation
+  orderPrice: number;
+  hasArrived: boolean;
+  paymentIntentId: string;
 }
 
 type WeatherResponse = {
@@ -53,15 +56,13 @@ const API_KEY = process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
 
 export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingOrderId, setClaimingOrderId] = useState<string | null>(null);
   const [isContractor, setIsContractor] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  const currentOrders = orders.filter(
-    (order) => order.orderStatus === "IN-PROGRESS"
-  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
@@ -107,23 +108,27 @@ export default function OrdersScreen() {
             },
           })
           .then((result) => {
-            setOrders(result.data || []);
+            setOrderHistory(result.data || []);
           })
           .catch((error) => {
             console.error("Error fetching orders:", error);
-            setOrders([]);
+            setOrderHistory([]);
           })
           .finally(() => {
             setOrdersLoading(false);
           });
       } else {
-        setOrders([]);
+        setOrderHistory([]);
         setOrdersLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, []);
+
+  const currentOrders = orderHistory.filter(
+    (order) => order.orderStatus === "IN-PROGRESS"
+  );
 
   const fetchOrders = async () => {
     try {
@@ -151,8 +156,10 @@ export default function OrdersScreen() {
         state: doc.data().state,
         zipCode: doc.data().zipCode,
         customerUid: doc.data().customerUid,
+        orderPrice: doc.data().orderPrice,
+        hasArrived: doc.data().hasArrived,
+        paymentIntentId: doc.data().paymentIntentId
       }));
-
       setOrders(fetched);
     } catch (e) {
       console.error("Error loading orders:", e);
@@ -339,7 +346,7 @@ export default function OrdersScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Services:</Text>
             <Text style={styles.value}>
-              {order.cleaningSpecifics.join(", ")}
+              {(order.cleaningSpecifics ?? []).join(", ")}
             </Text>
           </View>
 
@@ -437,12 +444,12 @@ export default function OrdersScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Cleaning:</Text>
             <Text style={styles.value}>
-              {order.cleaningSpecifics.join(", ")}
+              {(order.cleaningSpecifics ?? []).join(", ")}
             </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Preferred Time:</Text>
-            <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+            <Text style={styles.value}>{(order.prefTime ?? []).join(", ")}</Text>
           </View>
           {order.orderPlacedTime && (
             <View style={styles.infoRow}>
