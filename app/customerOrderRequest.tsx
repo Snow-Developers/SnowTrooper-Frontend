@@ -31,6 +31,7 @@ export default function EditInfoForCustomerRequest() {
     "zipCode",
     "customerPropertySize",
     "selectedPrefTime",
+    "image", 
   ];
 
   // Function to take a picture using the camera
@@ -202,6 +203,8 @@ export default function EditInfoForCustomerRequest() {
         return !customerPropertySize;
       case "selectedPrefTime":
         return selectedPrefTime.length === 0;
+      case "image":
+        return !image.trim(); 
       default:
         return false;
     }
@@ -312,7 +315,7 @@ export default function EditInfoForCustomerRequest() {
     const missingFields = fieldKeys.filter(validateField);
     if (missingFields.length > 0) {
       console.log("[DEBUG] Missing required fields:", missingFields);
-      alert("Please fill in all required fields before proceeding.");
+      alert("Please fill in all required fields before proceeding. Including a before photo for the order. ");
       return;
     }
 
@@ -688,7 +691,7 @@ export default function EditInfoForCustomerRequest() {
     >
       <View style={styles.info}>
         <Text variant="headlineMedium" style={styles.title}>
-          Please Confirm Your Order Request Information
+          Confirm Order Information
         </Text>
 
         <View style={styles.infoTextBox}>
@@ -889,7 +892,7 @@ export default function EditInfoForCustomerRequest() {
           onPress={takePicture}
           style={{ marginVertical: 12 }}
         >
-          Take a Picture
+          Take Before Service Photo
         </Button>
         {image ? (
           <View style={{ alignItems: "center", marginVertical: 8 }}>
