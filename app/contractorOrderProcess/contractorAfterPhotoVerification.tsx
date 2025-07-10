@@ -3,13 +3,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from "expo-router";
 import { getAuth } from "firebase/auth";
 import {
-  doc,
-  updateDoc
+  doc
 } from "firebase/firestore";
 import { useState } from "react";
 import { Dimensions, Image, Platform, StyleSheet, View } from "react-native";
 import { Button, Text } from "react-native-paper";
-import { db } from "../../services/firebaseConfig";
 
 export default function contractorBeforePhoto() {
   const [image, setImage] = useState<string | null>(null);
@@ -63,15 +61,49 @@ export default function contractorBeforePhoto() {
           "ngrok-skip-browser-warning": "11111",
           },
       });
-      const orderRef = doc(db, "orders", orderId as string);
-      await updateDoc(orderRef, { orderStatus: "COMPLETED" });
+      //const orderRef = doc(db, "orders", orderId as string);
+      //await updateDoc(orderRef, { orderStatus: "COMPLETED" });
 
-      //api.put('/update/{orderId}/completed/{uid}, (Add json for paymentIntent here)');
+  
+      const orderResponse = await api.get(`/order/${orderId}/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${getAPIToken()}`,
+          "ngrok-skip-browser-warning": "11111",
+        },
+      });
+      console.log("Order Response:", orderResponse.data);
+      console.log("Payment Intent ID:", orderResponse.data.paymentIntentId);
+
+      const paymentResponse = orderResponse.data.paymentIntentId;
+
+    
+      const paymentId = {
+        paymentIntentId: paymentResponse,
+      }
+      console.log("Payment Intent ID:", paymentId);
+      
+      try {
+        const paymentIntentResponse = await api.put(
+          `/order/update/${orderId}/completed`,
+          { paymentIntentId: paymentResponse },
+          {
+            headers: {
+              Authorization: `Bearer ${getAPIToken()}`,
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "11111",
+            },
+          }
+        );
+        console.log("Payment Intent Update Response:", paymentIntentResponse.data);
+      } catch (error) {
+        console.error("Update failed:", error.response?.status, error.response?.data);
+      }
+      
       alert("Service has been completed!");
       router.push('/contractorOrderProcess/contractorCompleteService');
     } catch (e) {
-      console.error("Failed to submit photo:", e);
-      alert("Failed to submit photo.");
+      console.error("Failed to complete service:", e);
+      //alert("Failed to submit photo.");
     }
   };
 

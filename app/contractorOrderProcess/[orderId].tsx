@@ -34,7 +34,6 @@ export default function ContractorOrderProcess() {
   const [nativeWatcher, setNativeWatcher] = useState<any>(null);
   const [webWatchId, setWebWatchId] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(false);
-  //const [hasArrived, setHasArrived] = useState(false);
   const {hasArrived, setHasArrived} = useLocalSearchParams();
 
   const user = getAuth().currentUser;

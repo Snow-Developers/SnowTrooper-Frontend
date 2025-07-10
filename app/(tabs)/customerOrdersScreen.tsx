@@ -427,7 +427,7 @@ function OrderCard({
               )}
               <Button
                 mode="contained"
-                disabled={!order.hasArrived}
+                disabled={!order.hasArrived || order.orderStatus === "COMPLETED"}
                 onPress={async () => {
                   try {
                     alert("Viewing Before Photo");
@@ -438,13 +438,34 @@ function OrderCard({
                       params: { orderId: id },
                     });
                     } catch (e) {
-                      console.error("Failed to update order:", e);
-                      alert("Failed to mark arrival.");
+                      console.error("Failed to go to Before Photo Verification:", e);
+                      alert("Failed to go to Before Photo Verification.");
                     }
                 }}
                   style={{ marginTop: 20 }}
                     >
                       Contractor Arrived, View Before Photo
+              </Button>
+              <Button
+                mode="contained"
+                disabled={!(order.orderStatus === "COMPLETED")}
+                onPress={async () => {
+                  try {
+                    alert("Viewing Before and After Photo");
+                    //console.log("Order ID:", order.orderId);
+                    const id = order.orderId;
+                    router.push({
+                      pathname: '/customerCompletedServicePhotoVerification',
+                      params: { orderId: id },
+                    });
+                    } catch (e) {
+                      console.error("Failed to go to completed service verification:", e);
+                      alert("Failed to go to Completed Service Photo Verification.");
+                    }
+                }}
+                  style={{ marginTop: 20 }}
+                    >
+                      Service Finished! View Before and After Photo
               </Button>
               {order.orderStatus === "IN-PROGRESS" && (
                 <Button
