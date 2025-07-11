@@ -632,14 +632,14 @@ export default function EditInfoForCustomerRequest() {
           }),
           "ngrok-skip-browser-warning": "11111",
         },
-      })
-      .then(() => {
-        console.log("Snow Removal Request has been updated successfully");
-        router.replace("/customerHomeScreen");
-      })
-      .catch((error) => {
-        console.log("Response Data:", error);
       });
+      
+      console.log("Snow Removal Request has been updated successfully");
+      router.replace("/customerHomeScreen");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert("Failed to create order. Please try again.");
+    }
   };
 
   // Validation function for payment button
@@ -680,8 +680,9 @@ export default function EditInfoForCustomerRequest() {
       contentContainerStyle={styles.scrollContainer}
       keyboardShouldPersistTaps="handled"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/> 
-    }>
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.info}>
         <Text variant="headlineMedium" style={styles.title}>
           Confirm Order Information
@@ -1041,5 +1042,34 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     resizeMode: "contain",
+  },
+  // Added missing price section styles
+  priceSection: {
+    marginVertical: 16,
+    padding: 16,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+  },
+  priceTitle: {
+    marginBottom: 12,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  priceBreakdown: {
+    marginBottom: 12,
+  },
+  priceItem: {
+    fontSize: 14,
+    marginVertical: 2,
+    color: "#666",
+  },
+  priceTotal: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#00bedc",
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+    paddingTop: 8,
   },
 });

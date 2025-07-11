@@ -20,8 +20,8 @@ type Order = {
   orderStatus: string;
   orderPlacedTime: string | null;
   orderFulfilledTime: string | null;
-  cleaningSpecifics: string[];
-  prefTime: string[];
+  cleaningSpecifics: string[] | null;
+  prefTime: string[] | null;
   contractorFName: string;
   contractorLName: string;
   contractorPhoneNumber: string;
@@ -381,11 +381,17 @@ function OrderCard({
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Cleaning:</Text>
-          <Text style={styles.value}>{order.cleaningSpecifics.join(", ")}</Text>
+          <Text style={styles.value}>
+            {order.cleaningSpecifics
+              ? order.cleaningSpecifics.join(", ")
+              : "None specified"}
+          </Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Preferred Time:</Text>
-          <Text style={styles.value}>{order.prefTime.join(", ")}</Text>
+          <Text style={styles.value}>
+            {order.prefTime ? order.prefTime.join(", ") : "None specified"}
+          </Text>
         </View>
         {order.orderPlacedTime && (
           <View style={styles.infoRow}>
@@ -427,24 +433,29 @@ function OrderCard({
               )}
               <Button
                 mode="contained"
-                disabled={!order.hasArrived || order.orderStatus === "COMPLETED"}
+                disabled={
+                  !order.hasArrived || order.orderStatus === "COMPLETED"
+                }
                 onPress={async () => {
                   try {
                     alert("Viewing Before Photo");
                     //console.log("Order ID:", order.orderId);
                     const id = order.orderId;
                     router.push({
-                      pathname: '/customerBeforePhotoVerification',
+                      pathname: "/customerBeforePhotoVerification",
                       params: { orderId: id },
                     });
-                    } catch (e) {
-                      console.error("Failed to go to Before Photo Verification:", e);
-                      alert("Failed to go to Before Photo Verification.");
-                    }
+                  } catch (e) {
+                    console.error(
+                      "Failed to go to Before Photo Verification:",
+                      e
+                    );
+                    alert("Failed to go to Before Photo Verification.");
+                  }
                 }}
-                  style={{ marginTop: 20 }}
-                    >
-                      Contractor Arrived, View Before Photo
+                style={{ marginTop: 20 }}
+              >
+                Contractor Arrived, View Before Photo
               </Button>
               <Button
                 mode="contained"
@@ -455,17 +466,22 @@ function OrderCard({
                     //console.log("Order ID:", order.orderId);
                     const id = order.orderId;
                     router.push({
-                      pathname: '/customerCompletedServicePhotoVerification',
+                      pathname: "/customerCompletedServicePhotoVerification",
                       params: { orderId: id },
                     });
-                    } catch (e) {
-                      console.error("Failed to go to completed service verification:", e);
-                      alert("Failed to go to Completed Service Photo Verification.");
-                    }
+                  } catch (e) {
+                    console.error(
+                      "Failed to go to completed service verification:",
+                      e
+                    );
+                    alert(
+                      "Failed to go to Completed Service Photo Verification."
+                    );
+                  }
                 }}
-                  style={{ marginTop: 20 }}
-                    >
-                      Service Finished! View Before and After Photo
+                style={{ marginTop: 20 }}
+              >
+                Service Finished! View Before and After Photo
               </Button>
               {order.orderStatus === "IN-PROGRESS" && (
                 <Button
