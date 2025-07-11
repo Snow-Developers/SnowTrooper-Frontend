@@ -351,6 +351,37 @@ function OrderCard({
     order.contractorPhoneNumber &&
     order.contractorUid;
 
+  const [imageAvailable, setImageAvailable] = useState(false);
+
+  useEffect(() => {
+  const checkImage = async () => {
+    try {
+      const userId = getAuth().currentUser?.uid;
+      if (!userId || !order.orderId) return;
+
+      const response = await api.get(
+        `/order/upload/before/${order.orderId}/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAPIToken()}`,
+            "ngrok-skip-browser-warning": "11111",
+          },
+        }
+      );
+
+      console.log(`Image available for order ${order.orderId}:`, response.data);
+      if (typeof response.data === 'string' && response.data.trim() !== '') {
+        setImageAvailable(true);
+      }
+    } catch (error) {
+      console.log(`No image for order ${order.orderId}:`, error.message);
+      setImageAvailable(false);
+    }
+  };
+
+  checkImage();
+}, [order.orderId]);
+
   const handleGetLocation = () => {
     if (!hasContractor) {
       alert("No contractor assigned yet.");
@@ -434,7 +465,7 @@ function OrderCard({
               <Button
                 mode="contained"
                 disabled={
-                  !order.hasArrived || order.orderStatus === "COMPLETED"
+                  !imageAvailable || order.orderStatus === "COMPLETED"
                 }
                 onPress={async () => {
                   try {
