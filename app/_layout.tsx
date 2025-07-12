@@ -1,4 +1,4 @@
-import api, { getAPIToken } from "@/services/api";
+import api, { ensureAPIAuthentication, getAPIToken } from "@/services/api";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { router, Stack, usePathname } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -26,9 +26,13 @@ export default function RootLayout() {
   const pathname = usePathname(); // current route path
   const [role, setRole] = useState(" ");
 
+  
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuth(), (user: any) => {
+    const unsubscribe = onAuthStateChanged(getAuth(), async (user: any) => {
       if (user) {
+        await ensureAPIAuthentication();
+        // console.log("API token: ", getAPIToken());
         api
           .get(`/users/${user.uid}`, {
             headers: {
@@ -54,11 +58,13 @@ export default function RootLayout() {
             }
           })
           .catch((error) => {
-            console.log("An error has occurred: ", error);
+            // console.log("An error has occurred: ", error);
             if (error.status === 404) {
               console.log(
                 "User profile cannot be found within Firestore or user profile has not been created yet"
               );
+            }else if(error.status === 403){
+              console.log("An error has occurred on _layout.tsx: ", error);
             }
           });
       } else {
@@ -68,23 +74,19 @@ export default function RootLayout() {
     });
     return unsubscribe;
   }, [pathname]);
-  /*
-  const appBarPath: { [key: string]: string } = {
-    "/homeScreen": "Home",
-    "/profileScreen": "Profile",
-    "/ordersScreen": "Orders"
-  };
-*/
+
+  
   const appBarPath: { [key: string]: string } = {};
 
+  
   if (role === "Contractor") {
-    appBarPath["/(tabs)/contractorHomeScreen"] = "Home";
-    appBarPath["/(tabs)/profileScreen"] = "Profile";
-    appBarPath["/(tabs)/ordersScreen"] = "Orders";
+    appBarPath["/contractorHomeScreen"] = "Home";
+    appBarPath["/profileScreen"] = "Profile";
+    appBarPath["/contractorOrdersScreen"] = "Orders";
   } else {
-    appBarPath["/(tabs)/customerHomeScreen"] = "Home";
-    appBarPath["/(tabs)/profileScreen"] = "Profile";
-    appBarPath["/ordersScreen"] = "Orders";
+    appBarPath["/customerHomeScreen"] = "Home";
+    appBarPath["/profileScreen"] = "Profile";
+    appBarPath["/customerOrdersScreen"] = "Orders";
   }
 
   return (
