@@ -3,8 +3,8 @@
 // Use this file to document backend entry point for fullstack projects.
 
 
+import { fireEvent, render } from "@testing-library/react-native";
 import React from "react";
-import { render } from "@testing-library/react-native";
 import DriverMapNative from "../components/driverMap.native";
 import DriverMapWeb from "../components/driverMap.web";
 import ViewSwitch from "../components/ViewSwitch";
@@ -14,11 +14,11 @@ describe("DriverMap.native", () => {
     const latitude = 40.0;
     const longitude = -83.0;
     const speed = 10;
-    const { getByA11yLabel } = render(
+    const { getByA11lyLabel } = render(
       <DriverMapNative latitude={latitude} longitude={longitude} speed={speed} />
     );
     // MapView and Marker are not easily testable, but we can check for accessibility label
-    // You may need to add accessibilityLabel to Marker for robust tests
+    // You may need to add acces__tests__\components.test.tsxsibilityLabel to Marker for robust tests
     // expect(getByA11yLabel("Driver")).toBeTruthy();
   });
 });
@@ -34,14 +34,16 @@ describe("ViewSwitch", () => {
   it("renders all values and handles selection", () => {
     const values = ["A", "B", "C"];
     const onChange = jest.fn();
-    const { getByText } = render(
+
+    const { getByText, getByRole } = render(
       <ViewSwitch values={values} selectedIndex={1} onChange={onChange} />
     );
+
     values.forEach((val) => {
       expect(getByText(val)).toBeTruthy();
     });
-    // Simulate press
-    getByText("C").props.onPress();
+
+    fireEvent.press(getByRole('button', { name: 'C' }));
     expect(onChange).toHaveBeenCalledWith(2);
   });
 });
@@ -78,10 +80,12 @@ describe("ViewSwitch - edge cases", () => {
   it("handles onChange callback", () => {
     const values = ["X", "Y"];
     const onChange = jest.fn();
-    const { getByText } = render(
+
+    const { getByRole } = render(
       <ViewSwitch values={values} selectedIndex={0} onChange={onChange} />
     );
-    getByText("Y").props.onPress();
+
+    fireEvent.press(getByRole('button', { name: 'Y' }));
     expect(onChange).toHaveBeenCalledWith(1);
   });
 
@@ -110,14 +114,17 @@ describe("ViewSwitch - advanced", () => {
   it("calls onChange only when selection changes", () => {
     const values = ["A", "B"];
     const onChange = jest.fn();
-    const { getByText } = render(
-      <ViewSwitch values={values} selectedIndex={0} onChange={onChange} />
+    const { getByRole } = render(
+    <ViewSwitch values={values} selectedIndex={0} onChange={onChange} />
     );
-    getByText("A").props.onPress(); // Already selected, should not call
+
+    fireEvent.press(getByRole('button', { name: 'A' }));
     expect(onChange).not.toHaveBeenCalled();
-    getByText("B").props.onPress(); // Change selection
+
+    fireEvent.press(getByRole('button', { name: 'B' }));
     expect(onChange).toHaveBeenCalledWith(1);
-  });
+
+    });
 });
 
 describe("DriverMap.native - error handling", () => {

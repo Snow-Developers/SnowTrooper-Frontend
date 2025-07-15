@@ -9,7 +9,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Alert, Platform, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 import { db } from "../../services/firebaseConfig";
 
@@ -225,14 +225,14 @@ export default function ContractorOrderProcess() {
           try {
             const orderRef = doc(db, "orders", orderId as string);
             await updateDoc(orderRef, { hasArrived: true });
-            alert("Marked as arrived!");
+            Alert.alert("Marked as arrived!");
             router.push({
               pathname: '/contractorOrderProcess/contractorBeforePhotoVerification',
               params: { orderId }
           });
           } catch (e) {
             console.error("Failed to update order:", e);
-            alert("Failed to mark arrival.");
+            Alert.alert("Failed to mark arrival.");
           }
         }}
         style={{ marginTop: 20 }}
@@ -245,14 +245,14 @@ export default function ContractorOrderProcess() {
         disabled={!hasArrived}
         onPress={async () => {
           try {
-            alert("Finishing Service!");
+            Alert.alert("Finishing Service!");
             router.push({
               pathname: '/contractorOrderProcess/contractorAfterPhotoVerification',
               params: { orderId }
           });
           } catch (e) {
             console.error("Failed to finish service:", e);
-            alert("Failed to finish service.");
+            Alert.alert("Failed to finish service.");
           }
         }}
         style={{ marginTop: 20 }}

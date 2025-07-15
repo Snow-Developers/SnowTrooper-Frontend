@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    StyleProp,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Animated,
+  Easing,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 
 interface ViewSwitchProps {
@@ -55,8 +55,10 @@ const ViewControl: React.FC<ViewSwitchProps> = ({
   }, [selected]);
 
   const handlePress = (index: number) => {
-    setSelected(index);
-    onChange(index);
+    if (index !== selected) {
+      setSelected(index);
+      onChange(index);
+    }
   };
 
   return (
@@ -97,6 +99,7 @@ const ViewControl: React.FC<ViewSwitchProps> = ({
             },
           ]}
           onPress={() => handlePress(index)}
+          accessibilityRole="button"
           activeOpacity={0.7}
         >
           <Text

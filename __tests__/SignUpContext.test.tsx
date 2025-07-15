@@ -1,29 +1,38 @@
+import { fireEvent, render } from "@testing-library/react-native";
 import React from "react";
-import { render, act } from "@testing-library/react-native";
+import { TouchableOpacity } from "react-native";
+import { Text } from 'react-native-paper';
 import { SignUpProvider, useSignUpContext } from "../context/SignUpContext";
 
 const TestComponent = () => {
   const { signUpData, setSignUpData } = useSignUpContext();
   return (
     <>
-      <span data-testid="firstName">{signUpData.firstName}</span>
-      <button
-        onClick={() =>
+      <Text testID="firstName">{signUpData.firstName}</Text>
+      <TouchableOpacity
+        onPress={() =>
           setSignUpData({
             ...signUpData,
             firstName: "Alice",
           })
         }
-        data-testid="updateBtn"
+        testID="updateBtn"
       >
-        Update
-      </button>
+        <Text>Update</Text>
+      </TouchableOpacity>
     </>
   );
 };
 
+export default TestComponent;
+
+const SignUpComponent = () => {
+  useSignUpContext();
+  return null;
+}
+
 describe("SignUpContext", () => {
-  it("provides default values", () => {
+   it("provides default values", () => {
     const { getByTestId } = render(
       <SignUpProvider>
         <TestComponent />
@@ -38,16 +47,15 @@ describe("SignUpContext", () => {
         <TestComponent />
       </SignUpProvider>
     );
-    act(() => {
-      getByTestId("updateBtn").props.onClick();
-    });
+
+    fireEvent.press(getByTestId("updateBtn"));
     expect(getByTestId("firstName").props.children).toBe("Alice");
   });
 
   it("throws error if used outside provider", () => {
-    // Suppress error output for this test
+    // suppress error output
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => useSignUpContext()).toThrow(
+    expect(() => render(<SignUpComponent />)).toThrow(
       /useSignUpContext must be used within a SignUpProvider/
     );
     spy.mockRestore();
